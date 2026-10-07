@@ -1,0 +1,36 @@
+name: Revisión diaria de precios
+
+on:
+  schedule:
+    # Todos los días a las 12:00 UTC (14:00 en España en verano, 13:00 en invierno).
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulación (no guarda nada)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: precios
+  cancel-in-progress: false
+
+jobs:
+  precios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --omit=dev
+      - run: node scripts/update-prices.mjs
+        env:
+          SUPABASE_URL: https://krxebauuphwraepjmvyt.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
