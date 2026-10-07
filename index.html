@@ -119,12 +119,14 @@
         </select>
         <button type="button" id="sortDir" class="iconbtn" aria-label="Cambiar orden">↓</button>
       </div>
+      <div class="seg" role="group" id="cLay" aria-label="Cómo ver la colección"><button type="button" data-clay="album" aria-pressed="true">📖 Álbumes</button><button type="button" data-clay="grid" aria-pressed="false">▦ Cuadrícula</button></div>
     </div>
     <div class="toolbar" style="justify-content:space-between">
       <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
       <div class="imgpick"><span class="msg" id="mLbl"></span><div class="seg" role="group" id="mSeg" aria-label="Imagen de esta categoría"><button type="button" id="mOff" aria-pressed="true">Imagen oficial</button><button type="button" id="mMine" aria-pressed="false">Mi copia</button></div></div>
     </div>
     <div class="grid" id="grid"><div class="empty">Cargando tu colección…</div></div>
+    <div id="calbum" hidden></div>
     <div class="legend">
       <span><span class="tag src-guia">Guía</span> guía de precios, mucho volumen</span>
       <span><span class="tag src-ebay">eBay</span> ventas reales, menos volumen</span>

@@ -10,7 +10,9 @@ let stopEmptyWatch = null;
 
 initImporter(() => ctx);
 
-initAuth({
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("demo")) {
+  import("./dev-demo.js").then((m) => m.startDemo(startApp));
+} else initAuth({
   onSignIn(user) {
     const db = createStore(user.id);
     ctx = { userId: user.id, db };
