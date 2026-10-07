@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Mi Colección</title>
+  <meta name="description" content="Valor y evolución de mi colección de cartas, sellados y coleccionables.">
+  <meta name="theme-color" content="#070B14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mi Colección">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+</head>
+<body>
+<div class="authwrap" id="auth">
+  <form class="authcard" id="authForm">
+    <div class="brand"><div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#241703" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/></svg></div><div><h1>Mi Colección</h1><div class="sub" id="authTitle">Entrar</div></div></div>
+    <label>Correo<input id="authEmail" type="email" autocomplete="email" required></label>
+    <label id="authPassL">Contraseña<input id="authPass" type="password" minlength="8" autocomplete="current-password" required></label>
+    <button type="submit" class="primary" id="authGo">Entrar</button>
+    <div class="msg" id="authMsg" role="status"></div>
+    <div class="authlinks">
+      <button type="button" class="ghost" id="authToUp">Crear cuenta</button>
+      <button type="button" class="ghost" id="authToReset">He olvidado la contraseña</button>
+      <button type="button" class="ghost" id="authToIn" hidden>Ya tengo cuenta</button>
+    </div>
+  </form>
+</div>
+<div class="authwrap" id="newPassBox" hidden>
+  <form class="authcard" id="newPassForm">
+    <h2>Nueva contraseña</h2>
+    <label>Contraseña nueva<input id="newPass" type="password" minlength="8" autocomplete="new-password" required></label>
+    <button type="submit" class="primary">Guardar</button>
+    <div class="msg" id="newPassMsg" role="status"></div>
+  </form>
+</div>
+
+<div class="bgart" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#241703" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="11" height="15" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V8"/></svg></div>
+      <div style="min-width:0"><h1>Mi Colección</h1><div class="sub" id="updated">Cargando…</div></div>
+    </div>
+    <div class="actions">
+      <button id="btnAdd" type="button" class="primary">+ Añadir</button>
+      <button id="btnExport" type="button">Descargar para Excel</button>
+      <button id="btnOut" type="button" class="ghost" hidden>Salir</button>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="Resumen de la colección">
+    <div>
+      <div class="eyebrow" id="heroLabel">Valor total de la colección</div>
+      <div class="big" id="kVal">—</div>
+      <div class="row1"><span class="pill flat" id="kPl">—</span><span class="m" id="kPlS"></span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="eyebrow">Invertido</div><div class="v" id="kInv">—</div><div class="s" id="kInvS"></div></div>
+        <div class="kpi"><div class="eyebrow">Piezas</div><div class="v" id="kPcs">—</div><div class="s" id="kPcsS"></div></div>
+        <div class="kpi"><div class="eyebrow">Precio fiable</div><div class="v" id="kRel">—</div><div class="s">del valor total</div></div>
+      </div>
+    </div>
+    <div class="herochart"><div id="heroChart"></div><div class="cap" id="heroCap"></div></div>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button type="button" role="tab" id="tab-col" aria-controls="p-col" aria-selected="true" data-tab="col">Colección<span class="cnt" id="cntCol"></span></button>
+    <button type="button" role="tab" id="tab-evo" aria-controls="p-evo" aria-selected="false" data-tab="evo">Evolución</button>
+    <button type="button" role="tab" id="tab-wish" aria-controls="p-wish" aria-selected="false" data-tab="wish">Objetivos<span class="cnt" id="cntWish"></span></button>
+    <button type="button" role="tab" id="tab-topps" aria-controls="p-topps" aria-selected="false" data-tab="topps">Topps<span class="cnt" id="cntTopps"></span></button>
+  </nav>
+
+  <section class="panel" id="addPanel" hidden aria-label="Añadir producto">
+    <h3>Añadir producto a la colección</h3>
+    <form id="addForm" class="form">
+      <label class="full">Nombre<input id="fName" required placeholder="Ej. Charizard ex 199/165"></label>
+      <label>Categoría<select id="fCat"><option value="pokemon">Pokémon</option><option value="dragonball">Dragon Ball</option><option value="futbol">Fútbol</option><option value="arte">Arte / láminas</option><option value="videojuegos">Videojuegos</option><option value="vhs">VHS</option><option value="otro">Otro</option></select></label>
+      <label>Tipo<select id="fKind"><option>Graded</option><option>Sellado</option><option>Suelta</option><option>Lámina</option></select></label>
+      <label>Set / colección<input id="fSet"></label>
+      <label>Nota de gradeo<input id="fGrade" placeholder="PSA 10"></label>
+      <label>Cantidad<input id="fQty" type="number" min="1" value="1"></label>
+      <label>Pagado (unidad, $)<input id="fPaid" type="number" step="0.01" min="0"></label>
+      <label class="full pullchk"><span><input type="checkbox" id="fPull"> Obtenida de sobres / caja</span><small>El coste será el <b class="pullpct">50%</b> del precio raw del día en que se registre.</small></label>
+      <label>Valor actual (unidad, $)<input id="fVal" type="number" step="0.01" min="0" placeholder="si lo sabes"></label>
+      <label class="full">Enlace de referencia (opcional)<input id="fRef" type="url" placeholder="https://www.pricecharting.com/…"></label>
+    </form>
+    <div class="formbar">
+      <button class="primary" id="addSave" type="button">Guardar</button>
+      <button class="ghost" id="addCancel" type="button">Cancelar</button>
+      <span class="msg">Si pegas el enlace de PriceCharting o SportsCardsPro, la revisión diaria actualizará su precio sola.</span>
+    </div>
+  </section>
+
+  <section class="panel" id="importPanel" hidden aria-label="Importar la colección anterior">
+    <h3>Trae tu colección de la versión anterior</h3>
+    <p class="msg" style="margin:0">Pulsa el botón y elige la carpeta <b>migracion</b> que está dentro del proyecto <b>mi-coleccion</b> (en Documentos). Se suben tus piezas, el historial de precios, las fotos y el álbum de Topps. Solo hace falta hacerlo una vez.</p>
+    <div class="formbar"><button type="button" class="primary" id="importGo">Elegir la carpeta «migracion»</button><span class="msg" id="importMsg"></span></div>
+    <input type="file" id="importInput" webkitdirectory multiple hidden>
+  </section>
+
+  <!-- Colección -->
+  <section id="p-col" role="tabpanel" aria-labelledby="tab-col" style="display:flex;flex-direction:column;gap:16px">
+    <div class="toolbar">
+      <label class="search" for="q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar por nombre, set o código" aria-label="Buscar en la colección"></label>
+      <div class="sortbox">
+        <select id="sort" aria-label="Ordenar por">
+          <option value="value">Valor total</option>
+          <option value="plpct">% de revalorización</option>
+          <option value="pl">Ganancia en $</option>
+          <option value="week">Cambio última revisión</option>
+          <option value="paid">Precio pagado</option>
+          <option value="reliab">Fiabilidad del precio</option>
+          <option value="name">Nombre (A-Z)</option>
+        </select>
+        <button type="button" id="sortDir" class="iconbtn" aria-label="Cambiar orden">↓</button>
+      </div>
+    </div>
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+      <div class="imgpick"><span class="msg" id="mLbl"></span><div class="seg" role="group" id="mSeg" aria-label="Imagen de esta categoría"><button type="button" id="mOff" aria-pressed="true">Imagen oficial</button><button type="button" id="mMine" aria-pressed="false">Mi copia</button></div></div>
+    </div>
+    <div class="grid" id="grid"><div class="empty">Cargando tu colección…</div></div>
+    <div class="legend">
+      <span><span class="tag src-guia">Guía</span> guía de precios, mucho volumen</span>
+      <span><span class="tag src-ebay">eBay</span> ventas reales, menos volumen</span>
+      <span><span class="tag src-manual">Sin comparables</span> valor = lo que pagaste hasta que haya ventas</span>
+    </div>
+  </section>
+
+  <!-- Objetivos -->
+  <section id="p-wish" role="tabpanel" aria-labelledby="tab-wish" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <h3>Añadir un objetivo</h3>
+      <form id="wForm" class="form">
+        <label class="full">Qué buscas<input id="wName" required placeholder="Ej. Metal Gear Solid PS1 sellado, cualquier nota"></label>
+        <label>Categoría<select id="wCat"><option value="pokemon">Pokémon</option><option value="dragonball">Dragon Ball</option><option value="futbol">Fútbol</option><option value="arte">Arte / láminas</option><option value="videojuegos">Videojuegos</option><option value="vhs">VHS</option><option value="otro">Otro</option></select></label>
+        <label>Tipo<select id="wKind"><option>Graded</option><option>Sellado</option><option>Suelta</option><option>Lámina</option></select></label>
+        <label>Nota de gradeo (si aplica)<input id="wGrade" placeholder="PSA 10"></label>
+        <label>Precio objetivo ($)<input id="wTarget" type="number" step="0.01" min="0"></label>
+        <label class="full">Enlace de referencia (opcional)<input id="wRef" type="url" placeholder="https://…"></label>
+      </form>
+      <div class="formbar"><button type="button" class="primary" id="wSave">Añadir objetivo</button><span class="msg" id="wMsg"></span></div>
+    </div>
+    <div class="wlist" id="wlist"><div class="empty">Aún no tienes objetivos. Añade lo que buscas y el precio al que lo comprarías.</div></div>
+  </section>
+
+  <!-- Evolución -->
+  <section id="p-evo" role="tabpanel" aria-labelledby="tab-evo" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="toolbar" style="justify-content:space-between">
+      <div class="chips" id="evoChips" role="group" aria-label="Filtrar evolución por categoría"></div>
+      <div class="seg" role="group" aria-label="Periodo"><button type="button" data-r="7" aria-pressed="false">7 días</button><button type="button" data-r="30" aria-pressed="true">30 días</button><button type="button" data-r="all" aria-pressed="false">Todo</button></div>
+    </div>
+    <div class="evo">
+      <div class="panel">
+        <div class="evostats"><div><div class="eyebrow">Valor</div><div class="v" id="evoVal">—</div></div><div><div class="eyebrow">Cambio en el periodo</div><div class="v" id="evoChg">—</div></div></div>
+        <div id="evoChart"></div>
+        <div class="legend"><span><span style="display:inline-block;width:18px;height:3px;background:var(--lime);vertical-align:middle;border-radius:2px"></span> Valor de mercado</span><span><span style="display:inline-block;width:18px;border-top:2px dashed var(--faint);vertical-align:middle"></span> Invertido</span><span id="evoNote"></span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+        <div class="panel"><h3 style="font-size:16px">Reparto por categoría</h3><div class="bars" id="bars"></div></div>
+        <div class="panel"><h3 style="font-size:16px">Lo que más se ha movido</h3><div class="movers" id="movers"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Topps -->
+  <section id="p-topps" role="tabpanel" aria-labelledby="tab-topps" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel tphead">
+      <div class="tptop">
+        <div style="min-width:0"><div class="eyebrow">Topps × Pokémon · 1999–2004</div><h3 id="tpTitle">Cargando las cartas…</h3><div class="msg" id="tpSub"></div></div>
+        <div class="seg" role="group" id="tpView" aria-label="Qué ver"><button type="button" data-v="sets" aria-pressed="true">Sets completos</button><button type="button" data-v="fav" aria-pressed="false">Legendarios y favoritos</button></div>
+      </div>
+      <div class="tpbar" aria-hidden="true"><i id="tpFill" style="width:0"></i></div>
+      <div id="tpPick"></div>
+    </div>
+    <div id="tpBanner"></div>
+    <div class="toolbar">
+      <label class="search" for="tpQ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="tpQ" type="search" placeholder="Buscar por Pokémon o número" aria-label="Buscar cartas Topps"></label>
+      <div class="seg" role="group" id="tpLay" aria-label="Cómo verlas"><button type="button" data-lay="album" aria-pressed="true">📖 Álbum</button><button type="button" data-lay="grid" aria-pressed="false">▦ Cuadrícula</button></div>
+      <div class="seg" role="group" id="tpFilt" aria-label="Mostrar"><button type="button" data-f="all" aria-pressed="true">Todas</button><button type="button" data-f="miss" aria-pressed="false">Me faltan</button><button type="button" data-f="own" aria-pressed="false">Las tengo</button><button type="button" data-f="want" aria-pressed="false">★ Las quiero</button></div>
+    </div>
+    <div id="tpGrid"><div class="empty">Cargando las cartas…</div></div>
+    <div class="legend">
+      <span>Marca <b>Ya la tengo</b> cuando la compres: se crea su ficha en tu colección (Pokémon) con el precio raw de hoy.</span>
+      <span>★ = la versión que quieres conseguir.</span>
+      <span id="tpSrc"></span>
+    </div>
+  </section>
+
+  <aside class="foot" id="nota-precios" style="flex-direction:column">
+    <p id="pullNote"><strong>Cartas obtenidas de sobres o cajas:</strong> su precio de compra es una estimación, el <span class="pullset"><input id="pullPctIn" type="number" min="0" max="100" step="5" value="50" aria-label="Porcentaje del precio raw"> %</span> del precio raw el día en que se registran; después no cambia. Si la caja de la que salieron también está en tu colección como sellada, baja su cantidad para no contarla dos veces. <span id="pullCount"></span></p>
+    <p><strong>Los precios de mercado no incluyen sales tax, envío ni comisiones.</strong> Son lo que se paga solo por el artículo en ventas recientes (PriceCharting, SportsCardsPro y eBay). Las piezas con fuente «Guía» se actualizan solas cada día; las de eBay y sin comparables mantienen su valor hasta que lo cambies. Si vendes, lo que recibes será menor. La ganancia es más exacta si en «Pagado» apuntas tu coste total, con tax, envío y gradeo incluidos.</p>
+  </aside>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dName">
+    <div class="sheethead">
+      <button type="button" class="ghost" id="dClose">← Volver</button>
+      <div class="seg" role="group" aria-label="Imagen de la carta"><button type="button" id="dOff" aria-pressed="true">Oficial</button><button type="button" id="dMine" aria-pressed="false">Mi copia</button></div>
+    </div>
+    <div class="stagecol">
+      <div class="stage" id="stage"></div>
+      <div class="stagectl">
+        <button type="button" id="dFlip">↻ Dar la vuelta</button>
+        <button type="button" id="dGyro" hidden>Mover con el móvil</button>
+        <button type="button" id="dPhoto" hidden>Subir mi foto</button>
+      </div>
+      <div class="imgsrc" id="imgsrc"></div>
+      <div class="hint">Mueve el ratón sobre la carta para inclinarla · doble clic para darle la vuelta</div>
+    </div>
+    <div class="info" id="info"></div>
+  </div>
+</div>
+<input type="file" id="photoInput" accept="image/*" hidden>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="/src/app.js"></script>
+</body>
+</html>

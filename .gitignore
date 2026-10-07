@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dev-dist/
+.env
+.env.*
+
+# Copia de tus datos de la versión anterior: es privada, nunca se sube a GitHub
+migracion/

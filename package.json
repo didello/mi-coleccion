@@ -1,0 +1,26 @@
+{
+  "name": "mi-coleccion",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Mi Colección: seguimiento del valor de cartas, sellados y coleccionables, con revisión diaria de precios.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/make-icons.mjs",
+    "migracion": "node scripts/build-import.mjs",
+    "precios": "node scripts/update-prices.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5",
+    "vite": "^8.3.3",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}
