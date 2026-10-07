@@ -8,7 +8,7 @@ const out = (f) => new URL(`../public/${f}`, import.meta.url).pathname.replace(/
 // iOS recorta las esquinas solo: el icono va a sangre, sin transparencias.
 const square = await sharp(svg, { density: 384 })
   .resize(512, 512)
-  .flatten({ background: "#C9962F" })
+  .flatten({ background: "#070B14" })
   .png()
   .toBuffer();
 
