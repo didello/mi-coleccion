@@ -46,7 +46,7 @@ Cada fila tiene `user_id`, y las políticas RLS hacen que cada cuenta solo vea l
 La revisión diaria (`.github/workflows/precios.yml`):
 
 1. Actualiza las piezas con fuente **Guía** que tienen enlace de PriceCharting o SportsCardsPro, usando la columna que corresponde a su nota (raw, PSA 9, PSA 10 o sellado).
-2. Deja igual las de **eBay**, **sin comparables** o con **valor puesto a mano**.
+2. Deja igual las de **sin comparables** o con **valor puesto a mano**. Las de **eBay** con enlace se vigilan: si la guía da un precio parecido (±20 %) al puesto a mano, pasan a **Guía** solas.
 3. Añade el punto del día al historial de todas. Si faltan días, los rellena con el último valor.
 4. Guarda el total del día en el resumen.
 

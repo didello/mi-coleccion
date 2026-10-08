@@ -3,7 +3,8 @@
 // Para cada usuario:
 //  · Las piezas con fuente «Guía» y enlace de PriceCharting/SportsCardsPro toman el precio del día
 //    (y las nuevas con enlace que aún están «Pendiente de buscar referencia»).
-//  · Las de eBay, sin comparables o con valor puesto a mano conservan su valor.
+//  · Las de eBay con enlace se vigilan: si la guía da un precio parecido (±20 %) al puesto a mano,
+//    pasan a «Guía». Si no, conservan su valor, igual que las sin comparables o con valor a mano.
 //  · Todas reciben el punto de hoy en su historial; si faltaran días (por ejemplo, si un día
 //    GitHub no ejecutó la tarea) se rellenan con el último valor conocido.
 //  · Se actualiza el resumen (meta/summary) con el total del día.
@@ -32,6 +33,8 @@ const addDay = (d) => {
   return t.toISOString().slice(0, 10);
 };
 const money = (n) => "$" + n.toLocaleString("es-ES", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+// Diferencia máxima (20 %) para que una pieza de eBay pase a la guía.
+const SIMILAR = 0.2;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function isAuto(it) {
@@ -112,7 +115,8 @@ for (const row of items) {
   const it = { ...row.data };
   let value = it.value ?? null;
 
-  if (isAuto(it)) {
+  const ebayWatch = it.source === "ebay" && isPriceGuideUrl(it.ref) && !it.pending;
+  if (isAuto(it) || ebayWatch) {
     const got = await pricesFor(it.ref);
     const prices = got && Object.keys(got).length ? got : null; // vacío = no se pudo leer la página
     const v = prices ? priceFor(it, prices) : null;
@@ -128,14 +132,20 @@ for (const row of items) {
       m.src = m.src || site;
       await save(row.user_id, "media", row.id, m);
     }
-    if (v != null) {
-      if (v !== value) console.log(`  ${it.name}: ${value ?? "—"} → ${v}`);
+    // Las de eBay pasan a la guía solo cuando su precio se parece al puesto a mano.
+    const close = v != null && (!ebayWatch || (value != null && Math.abs(v - value) <= value * SIMILAR));
+    if (close) {
+      if (ebayWatch) console.log(`  ${it.name}: ${site} ${gradeLabel(it)} ${money(v)} se parece al de eBay (${money(value)}), pasa a la guía`);
+      else if (v !== value) console.log(`  ${it.name}: ${value ?? "—"} → ${v}`);
       value = v;
       it.value = v;
       it.source = "guia";
       it.sourceName = `${site} ${gradeLabel(it)}: ${money(v)} (revisión automática)`;
       delete it.priceNote;
       updated++;
+    } else if (ebayWatch) {
+      if (v != null) console.log(`  ${it.name}: ${site} ${gradeLabel(it)} ${money(v)} no se parece al de eBay (${money(value)}), sigue con eBay`);
+      kept++;
     } else if (prices) {
       // La página se leyó bien pero no tiene precio para su nota: se avisa en la ficha para usar eBay.
       it.priceNote = `${site} no tiene precio ${gradeLabel(it)} para esta carta. Usa ventas de eBay.`;
