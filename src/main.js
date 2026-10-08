@@ -300,6 +300,9 @@ function infoHTML(it){
         <label class="full pullchk"><span><input type="checkbox" id="e-pull"${it.paidMode==="pull"?" checked":""}> Obtenida de sobres / caja</span><small>${it.paidMode==="pull"&&it.paidNote?esc(it.paidNote):`El coste será el <b class="pullpct">${Math.round(pullPct()*100)}%</b> del precio raw del día en que se registre.`}</small></label>
         <label>Cantidad<input id="e-qty" type="number" min="1" value="${it.qty||1}"></label>
         <label class="full">Valor manual (unidad)<input id="e-val" type="number" step="0.01" min="0" value="${it.source==="guia"||it.source==="ebay"?"":(it.value??"")}" placeholder="${it.source==="guia"?"se actualiza solo cada día":it.source==="ebay"?"precio de ventas eBay":""}"></label>
+        <label class="full">Enlace de PriceCharting / SportsCardsPro<input id="e-ref" type="url" value="${esc(it.ref||"")}" placeholder="https://www.pricecharting.com/game/…"></label>
+        ${it.priceNote&&it.source!=="ebay"?`<div class="full warn">${esc(it.priceNote)}</div>`:""}
+        <label class="full pullchk"><span><input type="checkbox" id="e-ebay"${it.source==="ebay"?" checked":""}> Usar ventas de eBay</span><small>Mira las ventas cerradas y escribe el precio en «Valor manual». La revisión diaria no lo cambia.</small><a id="e-ebaylink" href="${esc(ebaySold(it))}" target="_blank" rel="noopener"${it.source==="ebay"?"":" hidden"}>Ver ventas en eBay</a></label>
       </div>
       <div class="formbar">
         <button type="button" class="primary" data-act="save">Guardar cambios</button>
@@ -360,7 +363,12 @@ $("dGyro").addEventListener("click",async()=>{
 });
 
 /* info actions */
-$("info").addEventListener("change",e=>{if(e.target.id==="e-pull")$("e-paid").disabled=e.target.checked});
+// Mismo criterio que scripts/lib/pricecharting.mjs (isPriceGuideUrl).
+const isGuideUrl=u=>/^https:\/\/www\.(pricecharting|sportscardspro)\.com\/game\//.test(u||"");
+// Ventas cerradas de eBay de esa pieza, con la nota en la búsqueda si es una carta gradeada.
+function ebaySold(it){const q=[it.name,it.set,isGraded(it)&&it.grade&&!String(it.name).includes(it.grade)?it.grade:""].filter(Boolean).join(" ");
+  return "https://www.ebay.com/sch/i.html?_nkw="+encodeURIComponent(q)+"&LH_Sold=1&LH_Complete=1"}
+$("info").addEventListener("change",e=>{if(e.target.id==="e-pull")$("e-paid").disabled=e.target.checked;if(e.target.id==="e-ebay")$("e-ebaylink").hidden=!e.target.checked});
 $("info").addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const id=state.sel;const it=state.items.find(i=>i.id===id);if(!it||!db)return;
   const a=b.dataset.act;
@@ -372,8 +380,20 @@ $("info").addEventListener("click",async e=>{
     const patch={qty:qty>0?qty:1};
     if(pull){if(it.paidMode!=="pull"){patch.paidMode="pull";patch.paid=null;patch.paidNote=""}}
     else{patch.paid=isNaN(paid)?null:paid;if(it.paidMode==="pull"){patch.paidMode="";patch.paidNote=""}}
-    if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source="manual";patch.sourceName="Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
-    try{await db.doc("items/"+id).update(patch);b.blur();toast("Cambios guardados");setTimeout(ensurePullCosts,400)}catch(err){toast("No se pudo guardar. Revisa los números e inténtalo otra vez.")}
+    const ebay=$("e-ebay").checked;
+    if(vs===""&&ebay&&it.source!=="ebay"){toast("Escribe en «Valor manual» el precio que veas en las ventas de eBay");$("e-val").focus();return}
+    if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source=ebay?"ebay":"manual";patch.sourceName=ebay?`Ventas eBay: ${fmt(v)} (puesto a mano)`:"Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
+    // Enlace: con uno de PriceCharting/SportsCardsPro, sin eBay y sin valor a mano, la próxima revisión diaria toma el precio de la guía.
+    const ref=$("e-ref").value.trim(),guide=isGuideUrl(ref);let msg="Cambios guardados";
+    if(ref!==(it.ref||""))patch.ref=ref;
+    if(vs===""&&!ebay){
+      if((it.source==="manual"||it.source==="ebay")&&guide){patch.source="manual";patch.sourceName="Pendiente de buscar referencia"}
+      else if(it.source==="ebay"){patch.source="manual";patch.sourceName="Valor puesto a mano"}
+      else if(it.source==="guia"&&!guide){patch.source="manual";patch.sourceName=ref?"Último precio de la guía (el enlace no es de PriceCharting ni SportsCardsPro)":"Último precio de la guía (sin enlace)"}
+    }
+    if(patch.sourceName==="Pendiente de buscar referencia")msg="Guardado. El precio se actualizará en la próxima revisión diaria";
+    else if(ref&&!guide&&patch.ref!=null)msg="Enlace guardado. Solo los de PriceCharting o SportsCardsPro actualizan el precio";
+    try{await db.doc("items/"+id).update(patch);b.blur();toast(msg);setTimeout(ensurePullCosts,400)}catch(err){toast("No se pudo guardar. Revisa los números e inténtalo otra vez.")}
   }
 });
 

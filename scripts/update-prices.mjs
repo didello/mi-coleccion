@@ -113,15 +113,12 @@ for (const row of items) {
   let value = it.value ?? null;
 
   if (isAuto(it)) {
-    const prices = await pricesFor(it.ref);
+    const got = await pricesFor(it.ref);
+    const prices = got && Object.keys(got).length ? got : null; // vacío = no se pudo leer la página
     const v = prices ? priceFor(it, prices) : null;
-    if (v != null) {
-      const site = it.ref.includes("sportscardspro") ? "SportsCardsPro" : "PriceCharting";
-      if (v !== value) console.log(`  ${it.name}: ${value ?? "—"} → ${v}`);
-      value = v;
-      it.value = v;
-      it.source = "guia";
-      it.sourceName = `${site} ${gradeLabel(it)}: ${money(v)} (revisión automática)`;
+    const site = it.ref.includes("sportscardspro") ? "SportsCardsPro" : "PriceCharting";
+    if (prices) {
+      // Los precios de mercado se guardan aunque falte la columna de su nota: sirven de referencia.
       const key = `${row.user_id}/${row.id}`;
       const m = { ...(media.get(key) || {}) };
       const market = { d: today };
@@ -130,7 +127,20 @@ for (const row of items) {
       m.market = market;
       m.src = m.src || site;
       await save(row.user_id, "media", row.id, m);
+    }
+    if (v != null) {
+      if (v !== value) console.log(`  ${it.name}: ${value ?? "—"} → ${v}`);
+      value = v;
+      it.value = v;
+      it.source = "guia";
+      it.sourceName = `${site} ${gradeLabel(it)}: ${money(v)} (revisión automática)`;
+      delete it.priceNote;
       updated++;
+    } else if (prices) {
+      // La página se leyó bien pero no tiene precio para su nota: se avisa en la ficha para usar eBay.
+      it.priceNote = `${site} no tiene precio ${gradeLabel(it)} para esta carta. Usa ventas de eBay.`;
+      console.log(`  ${it.name}: ${site} no tiene precio ${gradeLabel(it)}, se mantiene ${value ?? "—"}`);
+      failed++;
     } else {
       console.log(`  ${it.name}: sin precio hoy, se mantiene ${value ?? "—"}`);
       failed++;

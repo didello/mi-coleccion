@@ -53,6 +53,8 @@ La revisión diaria (`.github/workflows/precios.yml`):
 Se puede lanzar a mano desde **Actions → Revisión diaria de precios → Run workflow**, con la opción de simulación para ver qué cambiaría sin guardar nada.
 
 > Una pieza nueva con enlace de PriceCharting o SportsCardsPro y sin valor pasa a **Guía** en la siguiente revisión. Si escribes un valor a mano en su ficha, la revisión deja de tocarla.
+>
+> El enlace es el de la carta, no el de una nota concreta: la revisión elige la columna (raw, PSA 9, PSA 10…) según la nota de la pieza. Si esa columna está vacía, guarda los precios que sí haya y avisa en la ficha para usar **ventas de eBay**: se marca la casilla, se abren las ventas cerradas con «Ver ventas en eBay» y se escribe el precio en «Valor manual».
 
 ## Puesta en marcha
 
