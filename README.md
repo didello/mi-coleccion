@@ -26,6 +26,7 @@ src/auth.js                 entrar, crear cuenta y recuperar contraseña
 src/importer.js             importación de la versión anterior
 scripts/update-prices.mjs   revisión diaria de precios
 scripts/lib/pricecharting.mjs  lectura de PriceCharting / SportsCardsPro
+scripts/foto-oficial.mjs    imagen oficial de una pieza (714×1000), desde Actions
 supabase/schema.sql         tablas, permisos y almacenamiento
 ```
 
