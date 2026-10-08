@@ -1,4 +1,4 @@
-// Pone la imagen oficial de una pieza, con el mismo formato que el resto (714×1000, JPG).
+// Pone la imagen oficial de una pieza, con el mismo formato que el resto (cartas a 714×1000, JPG).
 // La ejecuta GitHub Actions a mano (.github/workflows/foto-oficial.yml).
 //
 // Variables de entorno:
@@ -14,6 +14,7 @@ import sharp from "sharp";
 
 const { SUPABASE_URL, SUPABASE_SECRET_KEY, BUSCAR = "", IMAGEN = "", NOTA = "" } = process.env;
 const DRY = process.env.DRY_RUN === "1";
+const CARDCATS = new Set(["pokemon", "dragonball", "futbol"]); // igual que en src/main.js
 if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
   console.error("Faltan SUPABASE_URL o SUPABASE_SECRET_KEY.");
   process.exit(1);
@@ -50,14 +51,17 @@ if (!IMAGEN) process.exit(0);
 
 const res = await fetch(IMAGEN, { headers: { "User-Agent": "Mozilla/5.0" } });
 if (!res.ok) throw new Error(`HTTP ${res.status} en ${IMAGEN}`);
+// Las cartas van a 714×1000 como el resto; sellados, videojuegos, VHS… conservan su forma (máx. 1000 px, sin ampliar).
+const card = found[0].data.kind !== "Sellado" && CARDCATS.has(found[0].data.cat);
 const jpg = await sharp(Buffer.from(await res.arrayBuffer()))
   .rotate()
-  .resize(714, 1000, { fit: "cover", position: "centre" })
+  .resize(card ? { width: 714, height: 1000, fit: "cover", position: "centre" } : { width: 1000, height: 1000, fit: "inside", withoutEnlargement: true })
   .flatten({ background: "#ffffff" })
   .jpeg({ quality: 88, mozjpeg: true })
   .toBuffer();
+const meta = await sharp(jpg).metadata();
 const name = createHash("md5").update(jpg).digest("hex") + ".jpg";
-console.log(`Imagen: 714×1000, ${Math.round(jpg.length / 1024)} KB → catalogo/${name}${DRY ? " (simulación)" : ""}`);
+console.log(`Imagen: ${meta.width}×${meta.height}, ${Math.round(jpg.length / 1024)} KB → catalogo/${name}${DRY ? " (simulación)" : ""}`);
 if (DRY) process.exit(0);
 
 const up = await sb.storage.from("catalogo").upload(name, jpg, { contentType: "image/jpeg", upsert: true });
