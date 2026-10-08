@@ -85,13 +85,16 @@ async function save(user_id, collection, id, data) {
 }
 
 const priceCache = new Map();
+const blocked = new Set(); // enlaces de SportsCardsPro que GitHub no puede leer
 async function pricesFor(url) {
   if (!priceCache.has(url)) {
     await sleep(1500); // sin prisas: una petición cada segundo y medio
     priceCache.set(
       url,
       fetchPrices(url).catch((e) => {
-        console.warn(`  ! ${e.message}`);
+        // SportsCardsPro bloquea los servidores de GitHub (403): no es un fallo de la pieza, se resume al final.
+        if (e.status === 403 && url.includes("sportscardspro")) blocked.add(url);
+        else console.warn(`  ! ${e.message}`);
         return null;
       }),
     );
@@ -179,4 +182,5 @@ for (const [user_id, t] of totals) {
   console.log(`Usuario ${user_id.slice(0, 8)}…: valor ${money(+t.value.toFixed(2))}, invertido ${money(+t.invested.toFixed(2))}`);
 }
 
+if (blocked.size) console.log(`SportsCardsPro no deja leer sus páginas desde GitHub: ${blocked.size} pieza${blocked.size > 1 ? "s" : ""} con su valor de siempre.`);
 console.log(`Listo: ${updated} actualizadas, ${kept} con valor mantenido, ${failed} sin precio hoy.`);

@@ -31,7 +31,7 @@ export function parsePrices(html) {
 
 export async function fetchPrices(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} en ${url}`);
+  if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status} en ${url}`), { status: res.status });
   return parsePrices(await res.text());
 }
 
