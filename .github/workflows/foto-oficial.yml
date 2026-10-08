@@ -1,0 +1,44 @@
+name: Imagen oficial de una pieza
+
+on:
+  workflow_dispatch:
+    inputs:
+      buscar:
+        description: "Parte del nombre de la pieza"
+        required: true
+        type: string
+      imagen:
+        description: "Enlace de la imagen (vacío: solo enseña los datos de la pieza)"
+        required: false
+        type: string
+      nota:
+        description: "Qué versión es (se ve en la ficha)"
+        required: false
+        type: string
+      dry_run:
+        description: "Simulación (no guarda nada)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  foto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: node scripts/foto-oficial.mjs
+        env:
+          SUPABASE_URL: https://krxebauuphwraepjmvyt.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          BUSCAR: ${{ inputs.buscar }}
+          IMAGEN: ${{ inputs.imagen }}
+          NOTA: ${{ inputs.nota }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
