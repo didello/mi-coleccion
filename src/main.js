@@ -21,6 +21,7 @@ const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOStri
 function toast(t,action){const el=$("toast");el.textContent=t;if(action){const b=document.createElement("button");b.type="button";b.textContent=action.label;b.addEventListener("click",()=>{el.hidden=true;action.run()});el.append(b)}el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,action?7000:2600)}
 function savePref(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 const isSealed=it=>it.kind==="Sellado";
+const isGame=it=>it.cat==="videojuegos"; // en la guía: Loose · Complete · New
 const CARDCATS=new Set(["pokemon","dragonball","futbol"]);
 const isBoxy=it=>isSealed(it)||!CARDCATS.has(it.cat);
 const isGraded=it=>it.kind==="Graded"&&!!it.grade;
@@ -231,7 +232,7 @@ function stageHTML(it){
     front=`<div class="slab"><div class="label"><div style="min-width:0"><div class="l1">${esc([it.set].filter(Boolean).join(" "))}</div><div class="l1">${esc(it.name)}</div><div class="l2">${esc([it.code,it.serial].filter(Boolean).join(" · "))}</div>${it.cert?`<div class="cert">${esc(g.grader)} · ${esc(it.cert)}</div>`:""}</div><div class="gd"><span>${esc(GDESC[g.num]||g.grader)}</span><b>${esc(g.num||it.grade)}</b></div></div><div class="well">${art}</div><div class="plastic"></div></div>`;
   }else front=art;
   const m=(state.media[it.id]||{}).market||{};const q=it.qty||1,pl=plOf(it),pop=(state.media[it.id]||{}).pop;
-  const mk=isSealed(it)?`<div class="mk" style="grid-template-columns:1fr"><div>Sellado (guía)<b>${fmt(m.sealed)}</b></div></div>`:`<div class="mk"><div>Raw<b>${fmt(m.raw)}</b></div><div>PSA 9<b>${fmt(m.psa9)}</b></div><div>PSA 10<b>${fmt(m.psa10)}</b></div></div>`;
+  const mk=isGame(it)?`<div class="mk"><div>Loose<b>${fmt(m.loose)}</b></div><div>Complete<b>${fmt(m.cib)}</b></div><div>New<b>${fmt(m.new)}</b></div></div>`:isSealed(it)?`<div class="mk" style="grid-template-columns:1fr"><div>Sellado (guía)<b>${fmt(m.sealed)}</b></div></div>`:`<div class="mk"><div>Raw<b>${fmt(m.raw)}</b></div><div>PSA 9<b>${fmt(m.psa9)}</b></div><div>PSA 10<b>${fmt(m.psa10)}</b></div></div>`;
   const back=`<div class="bk"><div class="s">${esc([CATS[it.cat],it.set].filter(Boolean).join(" · "))}</div><div class="h">${esc(it.name)}</div>
     <div><div class="s">Valor de tu pieza${q>1?` (×${q})`:""}</div><div class="val">${it.value==null?"—":fmt0(it.value*q)}</div></div>
     <dl>${it.code?`<dt>Código</dt><dd>${esc(it.code)}</dd>`:""}${it.grade?`<dt>Nota</dt><dd>${esc(it.grade)}</dd>`:""}${it.serial?`<dt>Numeración</dt><dd>${esc(it.serial)}</dd>`:""}${it.cert?`<dt>Certificado</dt><dd>${esc(it.cert)}</dd>`:""}<dt>${it.paidMode==="pull"?"Coste estimado":"Pagado"}</dt><dd>${it.paidMode==="pull"&&it.paid==null?"pendiente":fmt(it.paid!=null?it.paid*q:null)}</dd><dt>Ganancia</dt><dd class="${pl==null?"":pl>=0?"pos":"neg"}">${pl==null?"—":(pl>=0?"+":"−")+fmt(Math.abs(pl))}</dd>${pop&&isGraded(it)?`<dt>Población PSA</dt><dd>${esc(it.grade)}: ${nES(pop.mine)} de ${nES(pop.total)}${pop.higher?` · ${nES(pop.higher)} mejores`:" · 0 mejores"}</dd>`:""}</dl>
@@ -252,7 +253,7 @@ function infoHTML(it){
   tags.push(`<span class="tag src-${esc(it.source||"manual")}">${SRC[it.source]||"Sin comparables"}</span>`);
   const trLbl=tr==null?"Sin datos":Math.abs(tr)<.01?"Estable":tr>0?"Al alza":"A la baja";
   const nAvg=x=>x?`${x.n} precio${x.n>1?"s":""}`:"sin precios";
-  const myKey=isSealed(it)?"sealed":(()=>{const g=gradeParts(it.grade);if(!it.grade)return"raw";if(g.num==="10")return"psa10";if(g.num==="9")return"psa9";return""})();
+  const myKey=isGame(it)?(isSealed(it)?"new":it.kind==="Graded"?"":"loose"):isSealed(it)?"sealed":(()=>{const g=gradeParts(it.grade);if(!it.grade)return"raw";if(g.num==="10")return"psa10";if(g.num==="9")return"psa9";return""})();
   const mt=(k,l)=>{const mine=myKey===k,useOwn=mine&&m[k]==null&&it.value!=null&&(it.source==="guia"||it.source==="ebay");const v=useOwn?it.value:m[k];
     return `<div class="stat${mine?" me":""}"><div class="l">${l}${mine?" · la tuya":""}</div><div class="v">${fmt(v)}</div><div class="s">${useOwn?"tu referencia de precio":v==null?"sin ventas":"mercado"}</div></div>`};
   const conf=state.confirmDel===it.id;
@@ -275,7 +276,7 @@ function infoHTML(it){
 
     <div class="card">
       <div class="cardhead"><h3 style="font-size:16px">Precios de mercado</h3><span class="msg">${m.d?`${esc(md.src||"")} · ${esc(dateES(m.d))}`:"sin referencia"}</span></div>
-      ${isSealed(it)?`<div class="stats3" style="grid-template-columns:1fr">${mt("sealed","Sellado")}</div>`:`<div class="stats3">${mt("raw","Raw")}${mt("psa9","PSA 9")}${mt("psa10","PSA 10")}</div>`}
+      ${isGame(it)?`<div class="stats3">${mt("loose","Loose")}${mt("cib","Complete")}${mt("new","New")}</div>`:isSealed(it)?`<div class="stats3" style="grid-template-columns:1fr">${mt("sealed","Sellado")}</div>`:`<div class="stats3">${mt("raw","Raw")}${mt("psa9","PSA 9")}${mt("psa10","PSA 10")}</div>`}
       ${m.note?`<div class="msg">${esc(m.note)}</div>`:""}
     </div>
     ${isGraded(it)?popCardHTML(it,md.pop):""}

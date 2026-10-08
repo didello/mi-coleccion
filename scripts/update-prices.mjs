@@ -13,7 +13,7 @@
 // Opcional: DRY_RUN=1 para ver qué cambiaría sin guardar nada.
 
 import { createClient } from "@supabase/supabase-js";
-import { fetchPrices, isPriceGuideUrl, priceFor } from "./lib/pricecharting.mjs";
+import { fetchPrices, isGame, isPriceGuideUrl, priceFor } from "./lib/pricecharting.mjs";
 
 const URL_ = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -44,6 +44,7 @@ function isAuto(it) {
 }
 
 function gradeLabel(it) {
+  if (isGame(it)) return it.kind === "Sellado" ? "New (sellado)" : it.kind === "Graded" ? "Graded" : "Loose";
   if (it.kind === "Sellado") return "sellado";
   if (it.kind === "Graded" && it.grade) return it.grade;
   return "raw";
@@ -126,7 +127,8 @@ for (const row of items) {
       const key = `${row.user_id}/${row.id}`;
       const m = { ...(media.get(key) || {}) };
       const market = { d: today };
-      if (it.kind === "Sellado") market.sealed = prices.raw ?? null;
+      if (isGame(it)) Object.assign(market, { loose: prices.raw ?? null, cib: prices.g7 ?? null, new: prices.g8 ?? null });
+      else if (it.kind === "Sellado") market.sealed = prices.raw ?? null;
       else Object.assign(market, { raw: prices.raw ?? null, psa9: prices.psa9 ?? null, psa10: prices.psa10 ?? null });
       m.market = market;
       m.src = m.src || site;

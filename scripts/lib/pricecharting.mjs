@@ -1,6 +1,7 @@
 // Lee los precios de una ficha de PriceCharting o SportsCardsPro (misma web, mismo formato).
 // Las cartas usan las columnas: Ungraded · Grade 7 · Grade 8 · Grade 9 · Grade 9.5 · PSA 10.
 // Los productos sellados (ETB, colecciones) muestran su precio en la primera columna.
+// Los videojuegos usan las mismas casillas con otro sentido: Loose (raw) · Complete (g7) · New (g8) · Graded (psa9).
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36";
 
@@ -35,7 +36,14 @@ export async function fetchPrices(url) {
 }
 
 // Qué columna corresponde a la pieza según su tipo y nota.
+export const isGame = (item) => item.cat === "videojuegos";
+
 export function priceFor(item, prices) {
+  if (isGame(item)) {
+    if (item.kind === "Sellado") return prices.g8 ?? null; // New
+    if (item.kind === "Graded") return prices.psa9 ?? null; // Graded
+    return prices.raw ?? null; // Loose
+  }
   if (item.kind === "Sellado") return prices.raw ?? null;
   if (item.kind !== "Graded" || !item.grade) return prices.raw ?? null;
   const num = (String(item.grade).match(/([\d.]+)/) || [])[1];
