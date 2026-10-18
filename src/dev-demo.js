@@ -8,6 +8,13 @@ export async function startDemo(startApp) {
     if (!data.has(d.collection)) data.set(d.collection, new Map());
     data.get(d.collection).set(d.id, d.data);
   }
+  // /?demo&juegos añade unos juegos de ejemplo para ver el expositor
+  if (new URLSearchParams(location.search).has("juegos")) {
+    const items = data.get("items");
+    [["Final Fantasy VII", "PS1", 85, 40], ["Metal Gear Solid", "PS1", 60, 25], ["Shadow of the Colossus", "PS2", 45, 30],
+     ["Gran Turismo 4", "PS2", 18, 10], ["The Last of Us", "PS3", 22, 15], ["Bloodborne", "PS4", 25, 20], ["Astro Bot", "PS5", 55, 50]]
+      .forEach(([name, set, value, paid], i) => items.set("demo-juego-" + i, { cat: "videojuegos", kind: "Videojuego", name, set, value, paid, qty: 1, source: "guia", history: [] }));
+  }
   const listeners = new Map();
   const col = (c) => data.get(c) || data.set(c, new Map()).get(c);
   const emit = (c) => (listeners.get(c) || []).forEach((fn) => fn());

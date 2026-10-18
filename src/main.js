@@ -327,7 +327,7 @@ function renderInfo(force){const it=state.items.find(i=>i.id===state.sel);if(!it
 function openDetail(id){if(!state.tsel&&$("overlay").hidden)lastFocus=document.activeElement;state.tsel=null;$("dOff").parentElement.hidden=false;state.sel=id;state.dmode=modeFor((state.items.find(i=>i.id===id)||{}).cat);state.flipped=false;state.confirmDel=null;
   $("overlay").hidden=false;document.body.style.overflow="hidden";$("overlay").scrollTop=0;renderStage();renderInfo(true);$("dClose").focus();
   $("dGyro").hidden=!("DeviceOrientationEvent" in window&&matchMedia("(pointer:coarse)").matches);}
-function closeDetail(){const wasT=state.tsel,wasC=state.sel;if(wasT&&$("abook"))try{tpPutBack(wasT)}catch(e){}if(wasC&&$("cbook"))try{cPutBack(wasC)}catch(e){}state.sel=null;state.tsel=null;TP.confirmOff=null;$("dOff").parentElement.hidden=false;$("overlay").hidden=true;document.body.style.overflow="";stopGyro();if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(e){}}
+function closeDetail(){const wasT=state.tsel,wasC=state.sel;if(wasT&&$("abook"))try{tpPutBack(wasT)}catch(e){}if(wasC&&$("cbook"))try{cPutBack(wasC)}catch(e){}if(wasC)document.querySelectorAll(".gcase.out").forEach(d=>d.classList.remove("out"));state.sel=null;state.tsel=null;TP.confirmOff=null;$("dOff").parentElement.hidden=false;$("overlay").hidden=true;document.body.style.overflow="";stopGyro();if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(e){}}
 function applyFlip(){const c=$("c3d");if(c)c.style.setProperty("--flip",state.flipped?"180deg":"0deg")}
 $("dClose").addEventListener("click",closeDetail);
 $("overlay").addEventListener("click",e=>{if(e.target===$("overlay"))closeDetail()});
@@ -736,10 +736,33 @@ function bookHTML(cat){
       <span class="b-title">${esc(CATS[cat])}</span><span class="b-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>
       <span class="b-corner t"></span><span class="b-corner b"></span><span class="b-gloss"></span></div><div class="b-inside"></div></div>
   </div>`}
+const GAMECAT="videojuegos"; // los juegos van al expositor, no a la estantería
 function shelfHTML(){
-  const cats=Object.keys(CATS).filter(k=>state.items.some(i=>i.cat===k&&!i.pending));
-  if(!cats.length)return `<div class="empty">${state.items.length?"Tus piezas están todas en «Por identificar».":"Aún no tienes piezas. Pulsa «+ Añadir» para empezar."}</div>`;
-  return `<div class="shelf">${cats.map(k=>`<button type="button" class="shelfbook" data-album="${k}" aria-label="Abrir el álbum de ${esc(CATS[k])}">${bookHTML(k)}</button>`).join("")}</div><div class="msg ahint">Toca un álbum para abrirlo</div>`}
+  const has=k=>state.items.some(i=>i.cat===k&&!i.pending);
+  const cats=Object.keys(CATS).filter(k=>k!==GAMECAT&&has(k));
+  if(!cats.length&&!has(GAMECAT))return `<div class="empty">${state.items.length?"Tus piezas están todas en «Por identificar».":"Aún no tienes piezas. Pulsa «+ Añadir» para empezar."}</div>`;
+  const books=cats.map(k=>`<button type="button" class="shelfbook" data-album="${k}" aria-label="Coger el álbum de ${esc(CATS[k])}">${bookHTML(k)}</button>`).join("");
+  return `<div class="room"><div class="bookcase"><div class="bc-crown"></div><div class="bc-inner"><div class="shelf">${books||'<div class="msg bc-empty">Aquí irán tus álbumes de cartas</div>'}</div></div><div class="bc-plinth"></div></div>${rackHTML()}</div>
+    <div class="msg ahint">Coge un álbum de la estantería o saca un juego del expositor</div>`}
+/* expositor de juegos: vitrina oscura con neón azul y las cajas de frente sobre baldas de luz */
+const platOf=it=>{const m=/\b(?:PS|PlayStation\s*)([1-5])\b|\b(PSP|PS\s?Vita|PSX|PSone)\b/i.exec([it.set,it.name,it.code].join(" "));
+  if(!m)return"";if(m[1])return"PS"+m[1];const x=m[2].toUpperCase().replace(/\s/g,"");return x==="PSX"||x==="PSONE"?"PS1":x==="PSVITA"?"VITA":x};
+const PLATNAME={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PlayStation 3",PS4:"PlayStation 4",PS5:"PlayStation 5",PSP:"PSP",VITA:"PS Vita"};
+const RACK_COLS=3;
+function rackHTML(){
+  const games=visible(GAMECAT),{n,v}=catTotals(games),slots=Math.max(RACK_COLS*2,Math.ceil(games.length/RACK_COLS)*RACK_COLS);
+  const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1;
+    return `<div class="gslot"><button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor">
+      <span class="g-spine"><span>${PLATNAME[p]}</span></span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>
+      <span class="g-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+  return `<div class="rack">
+    <div class="rk-lights" aria-hidden="true"></div>
+    <div class="rk-plate"><span class="rk-sym" aria-hidden="true"><i class="tri"></i><i class="cir"></i><i class="crs"></i><i class="sqr"></i></span><span class="rk-title">PlayStation</span></div>
+    <div class="rk-sub">${n?`${n} juego${n===1?"":"s"} · ${fmt0(v)}`:"Sin juegos todavía"}</div>
+    <div class="rk-body">${games.map(box).join("")}${Array.from({length:slots-games.length},()=>'<div class="gslot"><span class="gcase empty"></span></div>').join("")}</div>
+    <div class="rk-base" aria-hidden="true"></div></div>`}
+function gamePull(btn){const id=btn.dataset.game;if(reduce||!btn.animate){openDetail(id);return}
+  btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 function cPocket(it){const q=it.qty||1;
   return `<button type="button" class="pocket own${isBoxy(it)?" boxy":""}" data-cpocket="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Ver en 3D">
     <span class="pc">${imgHTML(it,modeFor(it.cat))}</span><span class="sleeve"></span>
@@ -844,6 +867,7 @@ async function closeAlbum(){
 
 $("calbum").addEventListener("click",e=>{
   const a=e.target.closest("[data-album]");if(a){openAlbum(a.dataset.album,a);return}
+  const gm=e.target.closest("[data-game]");if(gm){gamePull(gm);return}
   if(e.target.closest("[data-cclose]")){closeAlbum();return}
   const pg=e.target.closest("[data-cpg]");if(pg){cTurn(+pg.dataset.cpg);return}
   const g=e.target.closest("[data-cgoto]");if(g){const n=+g.dataset.cgoto,c=CA.pg[CA.cat]||0;if(n!==c){CA.pg[CA.cat]=n;CA.turnDir=n>c?1:-1;renderGrid()}return}
