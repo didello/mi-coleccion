@@ -86,6 +86,7 @@ async function save(user_id, collection, id, data) {
 
 const priceCache = new Map();
 const blocked = new Set(); // enlaces de SportsCardsPro que GitHub no puede leer
+const blockedNames = []; // piezas con esos enlaces, para el resumen
 async function pricesFor(url) {
   if (!priceCache.has(url)) {
     await sleep(1500); // sin prisas: una petición cada segundo y medio
@@ -122,6 +123,7 @@ for (const row of items) {
   const ebayWatch = it.source === "ebay" && isPriceGuideUrl(it.ref) && !it.pending;
   if (isAuto(it) || ebayWatch) {
     const got = await pricesFor(it.ref);
+    if (blocked.has(it.ref)) blockedNames.push(it.name);
     const prices = got && Object.keys(got).length ? got : null; // vacío = no se pudo leer la página
     const v = prices ? priceFor(it, prices) : null;
     const site = it.ref.includes("sportscardspro") ? "SportsCardsPro" : "PriceCharting";
@@ -182,5 +184,9 @@ for (const [user_id, t] of totals) {
   console.log(`Usuario ${user_id.slice(0, 8)}…: valor ${money(+t.value.toFixed(2))}, invertido ${money(+t.invested.toFixed(2))}`);
 }
 
-if (blocked.size) console.log(`SportsCardsPro no deja leer sus páginas desde GitHub: ${blocked.size} pieza${blocked.size > 1 ? "s" : ""} con su valor de siempre.`);
+if (blockedNames.length) {
+  const n = blockedNames.length;
+  console.log(`SportsCardsPro no deja leer sus páginas desde GitHub: ${n} pieza${n > 1 ? "s" : ""} con su valor de siempre.`);
+  for (const name of blockedNames) console.log(`  ${name}`);
+}
 console.log(`Listo: ${updated} actualizadas, ${kept} con valor mantenido, ${failed} sin precio hoy.`);
