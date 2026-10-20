@@ -93,7 +93,15 @@ function renderSummary(){
   $("heroChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:150,w:cw("heroChart"),color:byCat?CATVAR[f]:"var(--lime)",second:pts.map(p=>({d:p.d,v:p.invested})),id:"gh"}):"";
   $("heroCap").textContent=pts.length<2?"El historial empieza con la primera revisión; cada revisión diaria añade un punto.":`Valor de mercado desde el ${dateES(pts[0].d)} · línea discontinua: invertido`;
   $("cntCol").textContent=state.items.length;$("cntWish").textContent=state.wish.length||"";
+  renderEbayDue();
 }
+// Día en que se puso a mano el valor de eBay. Las piezas antiguas no lo guardan: se toma el primer día del valor actual en el historial.
+function ebaySetOn(it){if(it.valueDate)return it.valueDate;const h=hist(it);let i=h.length-1;while(i>0&&h[i-1].v===it.value)i--;return h.length?h[i].d:""}
+// Desde el día 1 de cada mes, aviso con las piezas de eBay cuyo precio es de un mes anterior.
+function renderEbayDue(){const month=new Date().toISOString().slice(0,7)+"-01";
+  const due=state.items.filter(it=>it.source==="ebay"&&!it.pending&&ebaySetOn(it)<month);const el=$("ebayDue");el.hidden=!due.length;if(!due.length)return;
+  el.innerHTML=`<strong>Toca repasar los precios de eBay de este mes.</strong> Mira las ventas cerradas y pon el valor a mano en: ${due.map(it=>`<button type="button" class="linkbtn" data-due="${esc(it.id)}">${esc(it.name)}</button>`).join(", ")}.`}
+$("ebayDue").addEventListener("click",e=>{const b=e.target.closest("[data-due]");if(b)openDetail(b.dataset.due)});
 
 /* collection */
 function renderChips(){
@@ -383,7 +391,7 @@ $("info").addEventListener("click",async e=>{
     else{patch.paid=isNaN(paid)?null:paid;if(it.paidMode==="pull"){patch.paidMode="";patch.paidNote=""}}
     const ebay=$("e-ebay").checked;
     if(vs===""&&ebay&&it.source!=="ebay"){toast("Escribe en «Valor manual» el precio que veas en las ventas de eBay");$("e-val").focus();return}
-    if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source=ebay?"ebay":"manual";patch.sourceName=ebay?`Ventas eBay: ${fmt(v)} (puesto a mano)`:"Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
+    if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source=ebay?"ebay":"manual";patch.sourceName=ebay?`Ventas eBay: ${fmt(v)} (puesto a mano)`:"Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.valueDate=today;patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
     // Enlace: con uno de PriceCharting/SportsCardsPro, sin eBay y sin valor a mano, la próxima revisión diaria toma el precio de la guía.
     const ref=$("e-ref").value.trim(),guide=isGuideUrl(ref);let msg="Cambios guardados";
     if(ref!==(it.ref||""))patch.ref=ref;

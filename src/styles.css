@@ -540,3 +540,5 @@ img{max-width:100%}
 .pocket.boxy .pc{background:radial-gradient(circle at 50% 42%,#2b303e,#10131a)}
 .pocket.boxy .pc img{object-fit:contain;padding:7%}
 .pocket .pgr{position:absolute;left:5%;top:4%;z-index:2;background:#F4F4EF;color:#15181A;border:1.5px solid var(--slab-red);font-family:var(--mono);font-size:9px;font-weight:700;line-height:1.4;border-radius:4px;padding:0 4px}
+.duewarn{margin-bottom:16px;line-height:1.5}
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
