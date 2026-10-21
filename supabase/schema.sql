@@ -92,3 +92,9 @@ drop policy if exists "catalogo: leer" on storage.objects;
 create policy "catalogo: leer"    on storage.objects for select to authenticated using (bucket_id = 'catalogo');
 create policy "catalogo: subir"   on storage.objects for insert to authenticated with check (bucket_id = 'catalogo');
 create policy "catalogo: cambiar" on storage.objects for update to authenticated using (bucket_id = 'catalogo');
+
+-- ---------- Permisos de la tabla ----------
+-- Desde el 30 de octubre de 2026 Supabase ya no da permisos automáticos a las tablas nuevas.
+-- La tabla actual ya los tiene; esto es para cuando se monte el proyecto de cero.
+grant select, insert, update, delete on public.documents to authenticated;
+grant select, insert, update, delete on public.documents to service_role;
