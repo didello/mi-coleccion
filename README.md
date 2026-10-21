@@ -48,8 +48,9 @@ La revisión diaria (`.github/workflows/precios.yml`):
 
 1. Actualiza las piezas con fuente **Guía** que tienen enlace de PriceCharting o SportsCardsPro, usando la columna que corresponde a su nota (raw, PSA 9, PSA 10 o sellado).
 2. Deja igual las de **sin comparables** o con **valor puesto a mano**. Las de **eBay** con enlace se vigilan: si la guía da un precio parecido (±20 %) al puesto a mano, pasan a **Guía** solas.
-3. Añade el punto del día al historial de todas. Si faltan días, los rellena con el último valor.
-4. Guarda el total del día en el resumen.
+3. Busca en PriceCharting la ficha de las piezas nuevas sin enlace (Pokémon, Dragon Ball y videojuegos), una sola vez por pieza. Si la encuentra, guarda el enlace: sin valor, pasa a **Guía**; con valor a mano, pasa a **Guía** solo si el precio se parece (±20 %), y si no, avisa en la ficha por si es otra versión. Para acertar, conviene rellenar el set y poner el código de la carta en el nombre (por ejemplo `BT9-115` o `#244`).
+4. Añade el punto del día al historial de todas. Si faltan días, los rellena con el último valor.
+5. Guarda el total del día en el resumen.
 
 Se puede lanzar a mano desde **Actions → Revisión diaria de precios → Run workflow**, con la opción de simulación para ver qué cambiaría sin guardar nada.
 

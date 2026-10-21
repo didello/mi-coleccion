@@ -5,6 +5,8 @@
 //    (y las nuevas con enlace que aún están «Pendiente de buscar referencia»).
 //  · Las de eBay con enlace se vigilan: si la guía da un precio parecido (±20 %) al puesto a mano,
 //    pasan a «Guía». Si no, conservan su valor, igual que las sin comparables o con valor a mano.
+//  · Las nuevas sin enlace (Pokémon, Dragon Ball, videojuegos) buscan su ficha en PriceCharting una vez;
+//    con valor a mano pasan a «Guía» solo si el precio se parece (±20 %).
 //  · Todas reciben el punto de hoy en su historial; si faltaran días (por ejemplo, si un día
 //    GitHub no ejecutó la tarea) se rellenan con el último valor conocido.
 //  · Se actualiza el resumen (meta/summary) con el total del día.
@@ -13,7 +15,7 @@
 // Opcional: DRY_RUN=1 para ver qué cambiaría sin guardar nada.
 
 import { createClient } from "@supabase/supabase-js";
-import { fetchPrices, isGame, isPriceGuideUrl, priceFor } from "./lib/pricecharting.mjs";
+import { canSearchGuide, fetchPrices, findGuideUrl, isGame, isPriceGuideUrl, priceFor } from "./lib/pricecharting.mjs";
 
 const URL_ = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -120,8 +122,32 @@ for (const row of items) {
   const it = { ...row.data };
   let value = it.value ?? null;
 
+  // Piezas nuevas sin enlace: se busca su ficha en PriceCharting una sola vez.
+  let justLinked = false;
+  if (!it.ref && !it.pending && !it.linkSearch && canSearchGuide(it) && (it.source === "manual" || it.source === "ebay")) {
+    await sleep(1500);
+    const found = await findGuideUrl(it).then(
+      (r) => r,
+      (e) => console.warn(`  ! ${it.name}: ${e.message} (se vuelve a buscar mañana)`),
+    );
+    if (found !== undefined) {
+      it.linkSearch = today;
+      if (found) {
+        it.ref = found.url;
+        console.log(`  ${it.name}: enlace encontrado → ${found.title} (${found.set})`);
+        if (value == null) it.sourceName = "Pendiente de buscar referencia";
+        else justLinked = true;
+      } else {
+        it.priceNote = "No encontré esta pieza en PriceCharting. Si está, pega el enlace de su ficha.";
+        console.log(`  ${it.name}: no se encontró en PriceCharting, se mantiene ${value ?? "—"}`);
+      }
+    }
+  }
+
   const ebayWatch = it.source === "ebay" && isPriceGuideUrl(it.ref) && !it.pending;
-  if (isAuto(it) || ebayWatch) {
+  const watch = ebayWatch || justLinked; // pasan a la guía solo si su precio se parece al puesto a mano
+  const mineLabel = ebayWatch ? "al de eBay" : "al tuyo";
+  if (isAuto(it) || watch) {
     const got = await pricesFor(it.ref);
     if (blocked.has(it.ref)) blockedNames.push(it.name);
     const prices = got && Object.keys(got).length ? got : null; // vacío = no se pudo leer la página
@@ -139,10 +165,10 @@ for (const row of items) {
       m.src = m.src || site;
       await save(row.user_id, "media", row.id, m);
     }
-    // Las de eBay pasan a la guía solo cuando su precio se parece al puesto a mano.
-    const close = v != null && (!ebayWatch || (value != null && Math.abs(v - value) <= value * SIMILAR));
+    // Las vigiladas pasan a la guía solo cuando su precio se parece al puesto a mano.
+    const close = v != null && (!watch || (value != null && Math.abs(v - value) <= value * SIMILAR));
     if (close) {
-      if (ebayWatch) console.log(`  ${it.name}: ${site} ${gradeLabel(it)} ${money(v)} se parece al de eBay (${money(value)}), pasa a la guía`);
+      if (watch) console.log(`  ${it.name}: ${site} ${gradeLabel(it)} ${money(v)} se parece ${mineLabel} (${money(value)}), pasa a la guía`);
       else if (v !== value) console.log(`  ${it.name}: ${value ?? "—"} → ${v}`);
       value = v;
       it.value = v;
@@ -152,6 +178,15 @@ for (const row of items) {
       updated++;
     } else if (ebayWatch) {
       if (v != null) console.log(`  ${it.name}: ${site} ${gradeLabel(it)} ${money(v)} no se parece al de eBay (${money(value)}), sigue con eBay`);
+      kept++;
+    } else if (justLinked) {
+      // Enlace recién encontrado que no cuadra: puede ser otra versión de la carta. Se avisa en la ficha.
+      const why = v != null ? `da ${money(v)} (${gradeLabel(it)}) frente a tus ${money(value)}` : prices ? `no tiene precio ${gradeLabel(it)}` : "no se pudo leer hoy";
+      it.priceNote =
+        v != null
+          ? `Enlace de PriceCharting encontrado, pero ${why}. Comprueba que es la misma versión; si lo es, borra el valor manual y pasará a Guía.`
+          : `Enlace de PriceCharting encontrado, pero ${why}. Se mantiene tu valor.`;
+      console.log(`  ${it.name}: ${site} ${why}, se mantiene ${money(value)}`);
       kept++;
     } else if (prices) {
       // La página se leyó bien pero no tiene precio para su nota: se avisa en la ficha para usar eBay.

@@ -394,7 +394,7 @@ $("info").addEventListener("click",async e=>{
     if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source=ebay?"ebay":"manual";patch.sourceName=ebay?`Ventas eBay: ${fmt(v)} (puesto a mano)`:"Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.valueDate=today;patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
     // Enlace: con uno de PriceCharting/SportsCardsPro, sin eBay y sin valor a mano, la próxima revisión diaria toma el precio de la guía.
     const ref=$("e-ref").value.trim(),guide=isGuideUrl(ref);let msg="Cambios guardados";
-    if(ref!==(it.ref||""))patch.ref=ref;
+    if(ref!==(it.ref||"")){patch.ref=ref;if(it.priceNote)patch.priceNote=null} // el aviso era del enlace anterior
     if(vs===""&&!ebay){
       if((it.source==="manual"||it.source==="ebay")&&guide){patch.source="manual";patch.sourceName="Pendiente de buscar referencia"}
       else if(it.source==="ebay"){patch.source="manual";patch.sourceName="Valor puesto a mano"}
