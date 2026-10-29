@@ -111,7 +111,8 @@ function renderChips(){
   if(state.filter!=="all"&&!counts[state.filter])state.filter="all";
   const dot=k=>k==="all"?"":`<span class="d" style="background:${k==="pending"?"var(--warn)":CATVAR[k]}"></span>`;
   const mk=(list,sel,attr)=>list.map(([k,l])=>`<button type="button" class="chip${k==="pending"?" pendchip":""}" ${attr}="${k}" aria-pressed="${sel===k}">${dot(k)}${l}<span class="c">${counts[k]||0}</span></button>`).join("");
-  $("chips").innerHTML=mk(opts,state.filter,"data-f");
+  // A las categorías se entra desde la estantería y el expositor: aquí solo queda «Por identificar», si hay piezas así.
+  $("chips").innerHTML=counts.pending?mk([["all","Todo"],["pending","Por identificar"]],state.filter,"data-f"):"";$("chips").hidden=!counts.pending;
   if(state.evoFilter!=="all"&&(state.evoFilter==="pending"||!counts[state.evoFilter]))state.evoFilter="all";
   $("evoChips").innerHTML=mk([["all","Todo"],...cats],state.evoFilter,"data-ef");
 }
@@ -138,13 +139,14 @@ function tileHTML(it){
   </button>`;
 }
 function renderGrid(){
+  if(state.lay==="grid"&&CATS[state.filter])state.filter="all"; // la cuadrícula no tiene botones de categoría
   const am=albumMode();$("grid").hidden=am;$("calbum").hidden=!am;
   for(const b of $("cLay").querySelectorAll("button"))b.setAttribute("aria-pressed",b.dataset.clay===state.lay);
   if(am){if(!CA.anim){$("calbum").innerHTML=state.filter==="all"?shelfHTML():cAlbumHTML(state.filter);cAlbumAfter()}}
   else{const l=visible();
   $("grid").innerHTML=l.length?l.map(tileHTML).join(""):`<div class="empty" style="grid-column:1/-1">${state.q?`Nada coincide con «${esc(state.q)}».`:"No hay productos en esta categoría."}</div>`;}
   const f=state.filter;$("mSeg").hidden=f==="all"||f==="pending";
-  $("mLbl").textContent=f==="all"?"Cada categoría recuerda su imagen: elige una para cambiarla":f==="pending"?"Abre su ficha para completar los datos":`Imagen de ${CATS[f]}:`;
+  $("mLbl").textContent=f==="all"?"Abre un álbum para elegir qué imagen ver":f==="pending"?"Abre su ficha para completar los datos":`Imagen de ${CATS[f]}:`;
   if(f!=="all"){$("mOff").setAttribute("aria-pressed",modeFor(f)==="off");$("mMine").setAttribute("aria-pressed",modeFor(f)==="mine")}
   const n=state.sort==="name";$("sortDir").textContent=state.dir==="asc"?"↑":"↓";$("sortDir").title=state.dir==="asc"?(n?"A → Z":"Menor a mayor"):(n?"Z → A":"Mayor a menor");
   $("sort").value=state.sort;
@@ -786,8 +788,22 @@ function cAlbumHTML(cat){
     <div class="calhead"><button type="button" class="ghost" data-cclose>‹ Estantería</button><div class="caltitle"><span class="d"></span>${esc(CATS[cat])}<span class="msg">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span></div></div>
     <div class="anav"><button type="button" class="ghost" data-cpg="-1" aria-label="Página anterior"${pg===0?" disabled":""}>‹</button><span class="apos">Página ${pg+1}${per===2&&pg+1<pages?`–${pg+2}`:""} de ${pages}</span><button type="button" class="ghost" data-cpg="1" aria-label="Página siguiente"${pg+per>=pages?" disabled":""}>›</button></div>
     <div class="abook${spread.length===2?" two":""}" id="cbook">${spread.join("")}</div>${dots}
-    <div class="msg ahint">Desliza o usa ← → para pasar página · toca una pieza para sacarla de la funda</div></div>`}
-function cAlbumAfter(){const b=$("cbook");if(!b)return;
+    <div class="msg ahint">Desliza o usa ← → para pasar página · toca una pieza para sacarla de la funda</div>
+    <section class="panel aevo" aria-label="Evolución de ${esc(CATS[cat])}">
+      <div class="aevohead"><h3>Evolución de ${esc(CATS[cat])}</h3><div class="seg" role="group" aria-label="Periodo">${[["7","7 días"],["30","30 días"],["all","Todo"]].map(([k,l])=>`<button type="button" data-ar="${k}" aria-pressed="${state.range===k}">${l}</button>`).join("")}</div></div>
+      <div class="aevobody"><div class="aevomain"><div class="evostats"><div><div class="eyebrow">Valor</div><div class="v" id="aevoVal">—</div></div><div><div class="eyebrow">Cambio en el periodo</div><div class="v" id="aevoChg">—</div></div></div>
+        <div id="aevoChart"></div><div class="legend"><span><i class="lk" style="background:var(--cc)"></i> Valor de mercado</span><span><i class="lk dash"></i> Invertido</span></div></div>
+      <div class="aevoside"><div class="eyebrow">Lo que más se ha movido</div><div class="movers" id="aevoMovers"></div></div></div>
+    </section></div>`}
+// Evolución de la categoría del álbum abierto: lo mismo que la pestaña Evolución, pero solo con sus piezas.
+function renderAlbumEvo(cat){if(!$("aevoChart"))return;
+  const items=visible(cat),cut=state.range==="all"?"":daysAgo(+state.range),pts=seriesFor(items).filter(p=>p.d>cut),col=CATVAR[cat]||"var(--c-otro)";
+  $("aevoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:200,w:cw("aevoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"gae"}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
+  const last=pts[pts.length-1],first=pts[0],chg=$("aevoChg");$("aevoVal").textContent=last?fmt0(last.value):"—";
+  if(pts.length>1){const d=last.value-first.value;chg.textContent=(d>=0?"+":"−")+fmt0(Math.abs(d))+" · "+pct(first.value?d/first.value:0);chg.className="v "+(d>=0?"pos":"neg")}else{chg.textContent="—";chg.className="v"}
+  const mv=items.map(it=>({it,r:trendOf(it,state.range)})).filter(x=>x.r!=null&&Math.abs(x.r)>=.0005).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,5);
+  $("aevoMovers").innerHTML=mv.length?mv.map(({it,r})=>`<button type="button" class="mover" data-mid="${esc(it.id)}">${pick(it,modeFor(it.cat))?srcHTML(pick(it,modeFor(it.cat)).src,""," loading=\"lazy\""):phHTML(it)}<div style="min-width:0"><div class="nm">${esc(it.name)}</div><div class="sb">${esc(it.grade||it.kind||"")} · ${fmt(it.value)}</div></div>${pillHTML(r)}</button>`).join(""):`<div class="msg">Ningún precio ha cambiado en este periodo.</div>`}
+function cAlbumAfter(){renderAlbumEvo(CA.cat);const b=$("cbook");if(!b)return;
   if(state.sel){const p=b.querySelector(`[data-cpocket="${state.sel}"]`);if(p)p.classList.add("out")}
   if(CA.turnDir&&!reduce&&b.animate){const d=CA.turnDir;b.animate([{transform:`perspective(1600px) rotateY(${d*28}deg) translateX(${d*40}px)`,opacity:.25},{transform:"none",opacity:1}],{duration:340,easing:"cubic-bezier(.2,.7,.2,1)"})}
   CA.turnDir=0}
@@ -877,6 +893,8 @@ $("calbum").addEventListener("click",e=>{
   const a=e.target.closest("[data-album]");if(a){openAlbum(a.dataset.album,a);return}
   const gm=e.target.closest("[data-game]");if(gm){gamePull(gm);return}
   if(e.target.closest("[data-cclose]")){closeAlbum();return}
+  const ar=e.target.closest("[data-ar]");if(ar){state.range=ar.dataset.ar;savePref("mc.range",state.range);document.querySelectorAll("[data-ar]").forEach(b=>b.setAttribute("aria-pressed",b===ar));renderAlbumEvo(CA.cat);return}
+  const mv=e.target.closest("[data-mid]");if(mv){openDetail(mv.dataset.mid);return}
   const pg=e.target.closest("[data-cpg]");if(pg){cTurn(+pg.dataset.cpg);return}
   const g=e.target.closest("[data-cgoto]");if(g){const n=+g.dataset.cgoto,c=CA.pg[CA.cat]||0;if(n!==c){CA.pg[CA.cat]=n;CA.turnDir=n>c?1:-1;renderGrid()}return}
   const po=e.target.closest("[data-cpocket]");if(po&&!CA.swiped)cPull(po)});
@@ -886,8 +904,11 @@ $("calbum").addEventListener("pointerup",e=>{if(!CA.sw)return;const dx=e.clientX
 document.addEventListener("keydown",e=>{if(state.tab!=="col"||!$("overlay").hidden||!$("cbook"))return;const t=e.target;
   if(t&&(t.tagName==="INPUT"||t.tagName==="SELECT"||t.closest(".tabs")))return;
   if(e.key==="ArrowRight"){e.preventDefault();cTurn(1)}else if(e.key==="ArrowLeft"){e.preventDefault();cTurn(-1)}});
-$("cLay").addEventListener("click",e=>{const b=e.target.closest("[data-clay]");if(!b)return;state.lay=b.dataset.clay;savePref("mc.lay",state.lay);renderGrid()});
-let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout(()=>{const b=$("cbook");if(b&&(tpPer()===2)!==b.classList.contains("two"))renderGrid()},250)});
+$("cLay").addEventListener("click",e=>{const b=e.target.closest("[data-clay]");if(!b)return;state.lay=b.dataset.clay;savePref("mc.lay",state.lay);
+  // Sin botones de categoría, la cuadrícula muestra siempre toda la colección.
+  if(state.lay==="grid"&&state.filter!=="all"&&state.filter!=="pending"){state.filter="all";savePref("mc.filter","all");renderChips();renderSummary()}
+  renderGrid()});
+let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout(()=>{const b=$("cbook");if(b&&(tpPer()===2)!==b.classList.contains("two"))renderGrid();else renderAlbumEvo(CA.cat)},250)});
 
 function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
 setTab(state.tab);
