@@ -44,7 +44,7 @@ function seriesFor(items){
     for(const it of items){const h=hist(it).filter(p=>p.d<=d);if(!h.length)continue;const q=it.qty||1;value+=h[h.length-1].v*q;if(it.paid!=null)invested+=it.paid*q}
     return{d,value:+value.toFixed(2),invested:+invested.toFixed(2)}});
 }
-function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,id="g",w=600}={}){
+function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,secondColor=null,id="g",w=600}={}){
   if(!points.length)return"";const[pt,pr,pb,pl]=labels?pad:[6,6,6,6];
   const all=points.map(p=>p.v).concat(second?second.map(p=>p.v):[]);
   let lo=Math.min(...all),hi=Math.max(...all);if(lo===hi){lo=lo*0.9;hi=hi*1.1||1}
@@ -55,7 +55,7 @@ function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)"
   if(labels){for(let k=0;k<=2;k++){const v=lo+(hi-lo)*k/2;const yy=y(v).toFixed(1);g+=`<line x1="${pl}" x2="${w-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line);stroke-width:1"/><text x="${pl-8}" y="${+yy+4}" text-anchor="end" font-size="11" style="fill:var(--faint);font-family:var(--mono)">${fmt0(v)}</text>`}
     const idx=points.length>1?[0,points.length-1]:[0];for(const i of idx)g+=`<text x="${x(i)}" y="${h-4}" text-anchor="${points.length===1?"middle":i?"end":"start"}" font-size="11" style="fill:var(--faint)">${esc(dateShort(points[i].d))}</text>`}
   const path=ps=>ps.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.v).toFixed(1)).join("");
-  if(second&&second.length>1)g+=`<path d="${path(second)}" style="fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4"/>`;
+  if(second&&second.length>1)g+=`<path d="${path(second)}" style="${secondColor?`fill:none;stroke:${secondColor};stroke-width:2.5;stroke-linejoin:round`:"fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4"}"/>`;
   if(points.length>1)g+=`<path d="${path(points)}L${x(points.length-1)},${h-pb}L${x(0)},${h-pb}Z" style="fill:url(#${id})"/><path d="${path(points)}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-linejoin:round"/>`;
   const li=points.length-1;g+=`<circle cx="${x(li)}" cy="${y(points[li].v)}" r="5" style="fill:${color};stroke:var(--bg);stroke-width:2"/>`;
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Gráfica de evolución del valor">${g}</svg>`;
@@ -204,7 +204,7 @@ function renderSales(){const l=soldList(),has=l.length>0;$("salesEmpty").hidden=
   const days=[...new Set(l.map(i=>i.sold.d))].sort(),start=new Date(days[0]+"T12:00:00Z");start.setUTCDate(start.getUTCDate()-1);
   const sold=[{d:start.toISOString().slice(0,10),v:0}],bought=[{d:sold[0].d,v:0}];let a=0,b=0;
   for(const d of days){for(const i of l)if(i.sold.d===d){a+=i.sold.price;b+=soldCost(i)||0}sold.push({d,v:+a.toFixed(2)});bought.push({d,v:+b.toFixed(2)})}
-  $("salesChart").innerHTML=lineSVG(sold,{h:240,w:cw("salesChart"),color:"var(--lime)",second:bought,id:"gs"});
+  $("salesChart").innerHTML=lineSVG(sold,{h:240,w:cw("salesChart"),color:"var(--lime)",second:bought,secondColor:"var(--loss)",id:"gs"});
   $("salesList").innerHTML=l.map(saleCard).join("")}
 $("salesList").addEventListener("click",async e=>{const b=e.target.closest("[data-unsell]");if(!b||!db)return;
   try{await db.doc("items/"+b.dataset.unsell).update({sold:null});toast("Venta deshecha: la carta vuelve a tu colección")}catch(err){toast("No se pudo deshacer. Inténtalo otra vez.")}});
