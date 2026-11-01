@@ -199,7 +199,7 @@ function saleCard(it){const c=soldCost(it),d=c!=null?it.sold.price-c:null,q=it.q
 function renderSales(){const l=soldList(),has=l.length>0;$("salesEmpty").hidden=has;$("salesBody").hidden=!has;if(!has)return;
   const total=l.reduce((a,i)=>a+i.sold.price,0),known=l.filter(i=>soldCost(i)!=null),cost=known.reduce((a,i)=>a+soldCost(i),0),sale=known.reduce((a,i)=>a+i.sold.price,0),gain=sale-cost;
   $("sTotal").textContent=fmt(total);$("sCost").textContent=fmt(cost);const g=$("sGain");g.textContent=known.length?(gain>=0?"+":"−")+fmt(Math.abs(gain))+(cost?" · "+pct(gain/cost):""):"—";g.className="v "+(known.length?(gain>=0?"pos":"neg"):"");
-  const missing=l.length-known.length;$("sNote").textContent=`${l.length} venta${l.length===1?"":"s"}${missing?` · ${missing} sin precio de compra, no cuenta${missing===1?"":"n"} en la ganancia ni en la línea de comprado`:""}. Importes según el precio de venta, sin descontar comisiones.`;
+  const missing=l.length-known.length;$("sNote").textContent=`${l.length} venta${l.length===1?"":"s"}${missing?` · ${missing} sin precio de compra, no cuenta${missing===1?"":"n"} en la ganancia ni en la línea de comprado`:""}`;
   // Acumulado por fecha de venta, empezando en cero el día anterior a la primera.
   const days=[...new Set(l.map(i=>i.sold.d))].sort(),start=new Date(days[0]+"T12:00:00Z");start.setUTCDate(start.getUTCDate()-1);
   const sold=[{d:start.toISOString().slice(0,10),v:0}],bought=[{d:sold[0].d,v:0}];let a=0,b=0;
