@@ -105,7 +105,7 @@ async function pricesFor(url) {
   return priceCache.get(url);
 }
 
-const items = await allDocs("items");
+const items = (await allDocs("items")).filter((r) => !r.data.sold); // las vendidas ya no se revisan ni cuentan en el total
 const media = new Map((await allDocs("media")).map((r) => [`${r.user_id}/${r.id}`, r.data]));
 const summaries = new Map(
   (await allDocs("meta")).filter((r) => r.id === "summary").map((r) => [r.user_id, r.data]),

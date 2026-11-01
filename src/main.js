@@ -5,10 +5,10 @@ const WCATS=CATS;
 const CATVAR={pokemon:"var(--c-pokemon)",dragonball:"var(--c-dragonball)",futbol:"var(--c-futbol)",arte:"var(--c-arte)",videojuegos:"var(--c-videojuegos)",vhs:"var(--c-vhs)",otro:"var(--c-otro)"};
 const SRC={guia:"Guía de precios",ebay:"Ventas eBay",manual:"Sin comparables",revisar:"Revisar versión"};
 const SRCS={guia:"Guía",ebay:"eBay",manual:"Sin comparables",revisar:"Revisar"};
-const state={items:[],media:{},wish:[],meta:null,filter:"all",evoFilter:"all",range:"30",q:"",sort:"value",dir:"desc",tab:"col",modes:{},sel:null,dmode:null,flipped:false,confirmDel:null,wConfirm:null,moving:null,settings:null};
+const state={items:[],sold:[],media:{},wish:[],meta:null,filter:"all",evoFilter:"all",range:"30",q:"",sort:"value",dir:"desc",tab:"col",modes:{},sel:null,dmode:null,flipped:false,confirmDel:null,wConfirm:null,moving:null,settings:null};
 let db=null,assets=null,photos=null,photoFor=null,lastFocus=null;
 try{const g=k=>localStorage.getItem(k);state.sort=g("mc.sort")||"value";state.filter=g("mc.filter")||"all";state.dir=g("mc.dir")||(state.sort==="name"?"asc":"desc");try{const m=JSON.parse(g("mc.modes")||"{}");if(m&&typeof m==="object")state.modes=m}catch(_){}state.tab=g("mc.tab")||"col";state.range=g("mc.range")||"30"}catch(e){}
-const h0=(location.hash||"").slice(1);if(h0==="deseos")state.tab="wish";else if(h0==="evolucion")state.tab="evo";else if(h0==="coleccion")state.tab="col";else if(h0==="topps")state.tab="topps";
+const h0=(location.hash||"").slice(1);if(h0==="deseos")state.tab="wish";else if(h0==="evolucion")state.tab="evo";else if(h0==="coleccion")state.tab="col";else if(h0==="topps")state.tab="topps";else if(h0==="ventas")state.tab="sales";
 
 const $=id=>document.getElementById(id);
 const fmt=n=>n==null||isNaN(n)?"—":"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2});
@@ -48,7 +48,7 @@ function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)"
   if(!points.length)return"";const[pt,pr,pb,pl]=labels?pad:[6,6,6,6];
   const all=points.map(p=>p.v).concat(second?second.map(p=>p.v):[]);
   let lo=Math.min(...all),hi=Math.max(...all);if(lo===hi){lo=lo*0.9;hi=hi*1.1||1}
-  const span=hi-lo;lo-=span*.1;hi+=span*.1;
+  const span=hi-lo;lo=lo>=0?Math.max(0,lo-span*.1):lo-span*.1;hi+=span*.1;
   const x=i=>points.length===1?pl+(w-pl-pr)/2:pl+i*(w-pl-pr)/(points.length-1);
   const y=v=>pt+(hi-v)*(h-pt-pb)/(hi-lo);
   let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${color};stop-opacity:.35"/><stop offset="1" style="stop-color:${color};stop-opacity:0"/></linearGradient></defs>`;
@@ -183,10 +183,37 @@ function renderEvo(){
   $("movers").innerHTML=mv.length?mv.map(({it,r})=>`<button type="button" class="mover" data-id="${esc(it.id)}">${pick(it,modeFor(it.cat))?srcHTML(pick(it,modeFor(it.cat)).src,""," loading=\"lazy\""):phHTML(it)}<div style="min-width:0"><div class="nm">${esc(it.name)}</div><div class="sb">${esc(it.grade||it.kind||"")} · ${fmt(it.value)}</div></div>${pillHTML(r)}</button>`).join(""):`<div class="msg">Ningún precio ha cambiado en este periodo.</div>`;
 }
 
+/* ventas */
+const localDay=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}; // la fecha de aquí, no la de UTC
+const soldCost=it=>it.paid==null?null:+(it.paid*(it.qty||1)).toFixed(2);
+const soldList=()=>[...state.sold].sort((a,b)=>a.sold.d<b.sold.d?1:a.sold.d>b.sold.d?-1:a.name.localeCompare(b.name));
+function renderSalesCount(){$("cntSales").textContent=state.sold.length||""}
+function saleBars(it){const c=soldCost(it),p=it.sold.price,top=Math.max(p,c||0)||1;
+  const bar=(l,v,col)=>`<div class="bar"><div class="l"><span>${l}</span><span class="mono">${fmt(v)}</span></div><div class="t"><i style="width:${(v/top*100).toFixed(1)}%;background:${col}"></i></div></div>`;
+  return `<div class="bars">${c!=null?bar("Comprada",c,"var(--faint)"):`<div class="msg">Sin precio de compra</div>`}${bar("Vendida",p,CATVAR[it.cat]||"var(--lime)")}</div>`}
+function saleCard(it){const c=soldCost(it),d=c!=null?it.sold.price-c:null,q=it.qty||1,up=d!=null&&d>=0;
+  return `<article class="sale"><div class="salepic${isBoxy(it)?" box":""}">${imgHTML(it,modeFor(it.cat))}</div>
+    <div class="salebody"><div class="salehead"><div style="min-width:0"><div class="nm">${esc(it.name)}</div><div class="msg">${esc([it.grade,q>1?"×"+q:"",dateES(it.sold.d)].filter(Boolean).join(" · "))}</div></div>${d!=null?`<span class="pill ${up?"up":"down"}">${up?"▲ +":"▼ −"}${fmt(Math.abs(d))}${c?" · "+pct(d/c):""}</span>`:""}</div>
+      ${saleBars(it)}
+      <div><button type="button" class="ghost saleundo" data-unsell="${esc(it.id)}">Deshacer venta</button></div></div></article>`}
+function renderSales(){const l=soldList(),has=l.length>0;$("salesEmpty").hidden=has;$("salesBody").hidden=!has;if(!has)return;
+  const total=l.reduce((a,i)=>a+i.sold.price,0),known=l.filter(i=>soldCost(i)!=null),cost=known.reduce((a,i)=>a+soldCost(i),0),sale=known.reduce((a,i)=>a+i.sold.price,0),gain=sale-cost;
+  $("sTotal").textContent=fmt(total);$("sCost").textContent=fmt(cost);const g=$("sGain");g.textContent=known.length?(gain>=0?"+":"−")+fmt(Math.abs(gain))+(cost?" · "+pct(gain/cost):""):"—";g.className="v "+(known.length?(gain>=0?"pos":"neg"):"");
+  const missing=l.length-known.length;$("sNote").textContent=`${l.length} venta${l.length===1?"":"s"}${missing?` · ${missing} sin precio de compra, no cuenta${missing===1?"":"n"} en la ganancia ni en la línea de comprado`:""}. Importes según el precio de venta, sin descontar comisiones.`;
+  // Acumulado por fecha de venta, empezando en cero el día anterior a la primera.
+  const days=[...new Set(l.map(i=>i.sold.d))].sort(),start=new Date(days[0]+"T12:00:00Z");start.setUTCDate(start.getUTCDate()-1);
+  const sold=[{d:start.toISOString().slice(0,10),v:0}],bought=[{d:sold[0].d,v:0}];let a=0,b=0;
+  for(const d of days){for(const i of l)if(i.sold.d===d){a+=i.sold.price;b+=soldCost(i)||0}sold.push({d,v:+a.toFixed(2)});bought.push({d,v:+b.toFixed(2)})}
+  $("salesChart").innerHTML=lineSVG(sold,{h:240,w:cw("salesChart"),color:"var(--lime)",second:bought,id:"gs"});
+  $("salesList").innerHTML=l.map(saleCard).join("")}
+$("salesList").addEventListener("click",async e=>{const b=e.target.closest("[data-unsell]");if(!b||!db)return;
+  try{await db.doc("items/"+b.dataset.unsell).update({sold:null});toast("Venta deshecha: la carta vuelve a tu colección")}catch(err){toast("No se pudo deshacer. Inténtalo otra vez.")}});
+let sRz;window.addEventListener("resize",()=>{clearTimeout(sRz);sRz=setTimeout(()=>{if(state.tab==="sales")renderSales()},220)});
+
 /* tabs */
 function setTab(t){state.tab=t;savePref("mc.tab",t);
-  for(const[k,p]of[["col","p-col"],["wish","p-wish"],["evo","p-evo"],["topps","p-topps"]]){$("tab-"+k).setAttribute("aria-selected",k===t);$(p).hidden=k!==t}
-  if(t==="evo")renderEvo();if(t==="wish")renderWish();if(t==="topps")renderTopps();}
+  for(const[k,p]of[["col","p-col"],["wish","p-wish"],["evo","p-evo"],["topps","p-topps"],["sales","p-sales"]]){$("tab-"+k).setAttribute("aria-selected",k===t);$(p).hidden=k!==t}
+  if(t==="evo")renderEvo();if(t==="wish")renderWish();if(t==="topps")renderTopps();if(t==="sales")renderSales();}
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b)setTab(b.dataset.tab)});
 const tabsEl=document.querySelector(".tabs");
 const tabOrder=()=>[...tabsEl.querySelectorAll("[data-tab]")].map(b=>b.dataset.tab);
@@ -195,7 +222,7 @@ tabsEl.addEventListener("keydown",e=>{if(e.key!=="ArrowRight"&&e.key!=="ArrowLef
   let i=(o.indexOf(state.tab)+(e.key==="ArrowRight"?1:-1)+o.length)%o.length;setTab(o[i]);$("tab-"+o[i]).focus()});
 /* reordenar pestañas arrastrando (mantener pulsado y mover) */
 function saveTabOrder(){savePref("mc.tabs",JSON.stringify(tabOrder()))}
-(function(){try{const o=JSON.parse(localStorage.getItem("mc.tabs")||"null");if(Array.isArray(o))for(const k of o){const b=$("tab-"+k);if(b)tabsEl.append(b)}}catch(e){}})();
+(function(){try{const o=JSON.parse(localStorage.getItem("mc.tabs")||"null");if(Array.isArray(o))for(const k of o){const b=$("tab-"+k);if(b)tabsEl.append(b)}if(Array.isArray(o))for(const b of [...tabsEl.querySelectorAll("[data-tab]")])if(!o.includes(b.dataset.tab))tabsEl.append(b)}catch(e){}})(); // las pestañas nuevas van al final
 let drag=null;
 tabsEl.addEventListener("pointerdown",e=>{const b=e.target.closest("[data-tab]");if(!b||e.button>0)return;
   drag={b,x0:e.clientX,id:e.pointerId,on:false,t:setTimeout(()=>{if(drag&&!drag.on)startDrag()},e.pointerType==="mouse"?180:350)}});
@@ -305,6 +332,18 @@ function infoHTML(it){
     </div>
 
     <div class="card">
+      <label class="pullchk"><span><input type="checkbox" id="e-sold"> Vendida</span><small>La carta sale de tu colección y pasa a la pestaña Ventas.</small></label>
+      <div id="e-soldf" class="soldf" hidden>
+        <div class="form">
+          <label>Fecha de venta<input id="e-sdate" type="date" max="${localDay()}" value="${localDay()}"></label>
+          <label>${(it.qty||1)>1?"Importe total":"Importe"} de la venta ($)<input id="e-sprice" type="number" step="0.01" min="0" inputmode="decimal"></label>
+          ${(it.qty||1)>1?`<label>Cantidad vendida<input id="e-sqty" type="number" min="1" max="${it.qty}" value="${it.qty}"></label>`:""}
+        </div>
+        <div class="formbar"><button type="button" class="primary" data-act="sell">Mover a Ventas</button></div>
+      </div>
+    </div>
+
+    <div class="card">
       <h3 style="font-size:16px">Editar</h3>
       <div class="form">
         <label>Pagado (unidad)<input id="e-paid" type="number" step="0.01" min="0" value="${it.paid??""}"${it.paidMode==="pull"?" disabled":""}></label>
@@ -379,12 +418,27 @@ const isGuideUrl=u=>/^https:\/\/www\.(pricecharting|sportscardspro)\.com\/game\/
 // Ventas cerradas de eBay de esa pieza, con la nota en la búsqueda si es una carta gradeada.
 function ebaySold(it){const q=[it.name,it.set,isGraded(it)&&it.grade&&!String(it.name).includes(it.grade)?it.grade:""].filter(Boolean).join(" ");
   return "https://www.ebay.com/sch/i.html?_nkw="+encodeURIComponent(q)+"&LH_Sold=1&LH_Complete=1"}
-$("info").addEventListener("change",e=>{if(e.target.id==="e-pull")$("e-paid").disabled=e.target.checked;if(e.target.id==="e-ebay")$("e-ebaylink").hidden=!e.target.checked});
+$("info").addEventListener("change",e=>{if(e.target.id==="e-pull")$("e-paid").disabled=e.target.checked;if(e.target.id==="e-ebay")$("e-ebaylink").hidden=!e.target.checked;if(e.target.id==="e-sold"){$("e-soldf").hidden=!e.target.checked;if(e.target.checked)$("e-sprice").focus()}});
 $("info").addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const id=state.sel;const it=state.items.find(i=>i.id===id);if(!it||!db)return;
   const a=b.dataset.act;
   if(a==="del"){state.confirmDel=id;renderInfo(true);return}
   if(a==="del-no"){state.confirmDel=null;renderInfo(true);return}
+  if(a==="sell"){
+    const d=$("e-sdate").value,price=parseFloat($("e-sprice").value),qty=it.qty||1,n=qty>1?parseInt($("e-sqty").value,10):1;
+    if(!d||d>localDay()){toast("Indica la fecha de venta (no puede ser futura)");$("e-sdate").focus();return}
+    if(!(price>0)){toast("Indica el importe de la venta");$("e-sprice").focus();return}
+    if(!(n>=1&&n<=qty)){toast(`La cantidad vendida debe estar entre 1 y ${qty}`);$("e-sqty").focus();return}
+    const sold={d,price};
+    try{
+      if(n<qty){ // venta parcial: las vendidas pasan a una pieza aparte y el resto sigue en la colección
+        const{id:_,...copy}=it,ref=await db.collection("items").add({...copy,qty:n,sold});
+        if(state.media[id])try{await db.doc("media/"+ref.id).set(state.media[id])}catch(e){}
+        await db.doc("items/"+id).update({qty:qty-n});if(state.sel===id)renderInfo(true);
+      }else await db.doc("items/"+id).update({sold});
+      toast(`Movida a Ventas: ${fmt(price)}`);
+    }catch(err){toast("No se pudo guardar la venta. Inténtalo otra vez.")}
+    return}
   if(a==="del-yes"){try{await db.doc("items/"+id).delete();closeDetail();toast("Producto borrado")}catch(err){toast("No se pudo borrar. Inténtalo otra vez.")}return}
   if(a==="save"){
     const paid=parseFloat($("e-paid").value),qty=parseInt($("e-qty").value,10),vs=$("e-val").value,pull=$("e-pull").checked;
@@ -507,8 +561,9 @@ $("btnExport").addEventListener("click",async()=>{
   const cols=["Nombre","Categoría","Tipo","Set","Código","Nota","Cert","Cantidad","Pagado unidad","Valor unidad","Pagado total","Valor total","Ganancia","Ganancia %","Fuente","Referencia","Revisado"];
   const q=v=>{v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
   const rows=visible().map(it=>{const n=it.qty||1,pl=plOf(it);return[it.name,CATS[it.cat],it.kind,it.set,it.code,it.grade,it.cert,n,it.paid,it.value,it.paid!=null?+(it.paid*n).toFixed(2):"",it.value!=null?+(it.value*n).toFixed(2):"",pl!=null?+pl.toFixed(2):"",pl!=null&&it.paid?+(pl/(it.paid*n)*100).toFixed(1):"",SRC[it.source]||"",it.ref,it.updated].map(q).join(",")});
+  const sales=state.sold.length?["","Ventas,Fecha,Cantidad,Importe,Coste",...soldList().map(it=>[q(it.name),it.sold.d,it.qty||1,it.sold.price,soldCost(it)??""].join(","))]:[];
   const hist=["","Historial,Fecha,Valor unidad",...state.items.flatMap(it=>(it.history||[]).map(p=>[q(it.name),p.d,p.v].join(",")))];
-  const csv="﻿"+[cols.join(","),...rows,...hist].join("\n");
+  const csv="﻿"+[cols.join(","),...rows,...hist,...sales].join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));a.download=`mi-coleccion-${new Date().toISOString().slice(0,10)}.csv`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)
 });
 
@@ -910,7 +965,7 @@ $("cLay").addEventListener("click",e=>{const b=e.target.closest("[data-clay]");i
   renderGrid()});
 let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout(()=>{const b=$("cbook");if(b&&(tpPer()===2)!==b.classList.contains("two"))renderGrid();else renderAlbumEvo(CA.cat)},250)});
 
-function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
+function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();renderSalesCount();if(state.tab==="sales")renderSales();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
 setTab(state.tab);
 
 /* arranque (con sesión iniciada) */
@@ -921,8 +976,8 @@ export function startApp(store,ph){
   assets={upload:b=>photos.upload(b),delete:f=>photos.remove(f)};
   if(state.sel)renderStage();
   let prevPhoto={};
-  const withPhotos=()=>photos.ensure(state.items.map(i=>i.photo)).then(ch=>{if(!ch)return;renderGrid();if(state.tab==="evo")renderEvo();if(state.sel)renderStage()});
-  unsubs.push(db.collection("items").onSnapshot(s=>{state.items=s.docs.map(d=>({id:d.id,...d.data()}));renderAll();renderPull();ensurePullCosts();withPhotos();
+  const withPhotos=()=>photos.ensure([...state.items,...state.sold].map(i=>i.photo)).then(ch=>{if(!ch)return;renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="sales")renderSales();if(state.sel)renderStage()});
+  unsubs.push(db.collection("items").onSnapshot(s=>{const all=s.docs.map(d=>({id:d.id,...d.data()}));state.items=all.filter(i=>!i.sold);state.sold=all.filter(i=>i.sold);renderAll();renderPull();ensurePullCosts();withPhotos();
     if(state.sel){const it=state.items.find(i=>i.id===state.sel);if(it&&prevPhoto[it.id]!==it.photo)withPhotos().then(()=>renderStage())}
     prevPhoto=Object.fromEntries(state.items.map(i=>[i.id,i.photo]))},
     ()=>{$("grid").innerHTML='<div class="empty" style="grid-column:1/-1">No se pudo conectar con tus datos. Recarga la página.</div>'}));
@@ -937,7 +992,7 @@ export function stopApp(){
   while(unsubs.length)try{unsubs.pop()()}catch(e){}
   if(db&&db.close)db.close();
   db=null;photos=null;assets=null;
-  state.items=[];state.media={};state.wish=[];state.meta=null;state.settings=null;TP.want={};TP.cat=null;TP.catId=null;
+  state.items=[];state.sold=[];state.media={};state.wish=[];state.meta=null;state.settings=null;TP.want={};TP.cat=null;TP.catId=null;
   if(!$("overlay").hidden)closeDetail();
   $("grid").innerHTML='<div class="empty" style="grid-column:1/-1">Cargando tu colección…</div>';
 }

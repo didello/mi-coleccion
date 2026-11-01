@@ -75,6 +75,7 @@
     <button type="button" role="tab" id="tab-evo" aria-controls="p-evo" aria-selected="false" data-tab="evo">Evolución</button>
     <button type="button" role="tab" id="tab-wish" aria-controls="p-wish" aria-selected="false" data-tab="wish">Objetivos<span class="cnt" id="cntWish"></span></button>
     <button type="button" role="tab" id="tab-topps" aria-controls="p-topps" aria-selected="false" data-tab="topps">Topps<span class="cnt" id="cntTopps"></span></button>
+    <button type="button" role="tab" id="tab-sales" aria-controls="p-sales" aria-selected="false" data-tab="sales">Ventas<span class="cnt" id="cntSales"></span></button>
   </nav>
 
   <section class="panel" id="addPanel" hidden aria-label="Añadir producto">
@@ -169,6 +170,20 @@
         <div class="panel"><h3 style="font-size:16px">Reparto por categoría</h3><div class="bars" id="bars"></div></div>
         <div class="panel"><h3 style="font-size:16px">Lo que más se ha movido</h3><div class="movers" id="movers"></div></div>
       </div>
+    </div>
+  </section>
+
+  <!-- Ventas -->
+  <section id="p-sales" role="tabpanel" aria-labelledby="tab-sales" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="empty" id="salesEmpty">Aún no has registrado ventas. Abre la ficha de una carta y marca «Vendida».</div>
+    <div id="salesBody" class="salesbody" hidden>
+      <div class="panel">
+        <div class="evostats"><div><div class="eyebrow">Total vendido</div><div class="v" id="sTotal">—</div></div><div><div class="eyebrow">Comprado</div><div class="v" id="sCost">—</div></div><div><div class="eyebrow">Ganancia</div><div class="v" id="sGain">—</div></div></div>
+        <div id="salesChart"></div>
+        <div class="legend"><span><i class="lk" style="background:var(--lime)"></i> Vendido (acumulado)</span><span><i class="lk dash"></i> Comprado (acumulado)</span></div>
+        <div class="msg" id="sNote"></div>
+      </div>
+      <div class="salelist" id="salesList"></div>
     </div>
   </section>
 

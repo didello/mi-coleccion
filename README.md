@@ -52,6 +52,8 @@ La revisión diaria (`.github/workflows/precios.yml`):
 4. Añade el punto del día al historial de todas. Si faltan días, los rellena con el último valor.
 5. Guarda el total del día en el resumen.
 
+Las piezas marcadas como **Vendida** (campo `sold: { d, price }`) pasan a la pestaña **Ventas**: dejan de contar en totales, gráficos, álbumes y avisos, y la revisión diaria ya no las toca. «Deshacer venta» las devuelve a la colección.
+
 Se puede lanzar a mano desde **Actions → Revisión diaria de precios → Run workflow**, con la opción de simulación para ver qué cambiaría sin guardar nada.
 
 > Una pieza nueva con enlace de PriceCharting o SportsCardsPro y sin valor pasa a **Guía** en la siguiente revisión. Si escribes un valor a mano en su ficha, la revisión deja de tocarla.
