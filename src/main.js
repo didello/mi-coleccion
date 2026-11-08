@@ -831,6 +831,9 @@ function rackHTML(){
     <div class="rk-base" aria-hidden="true"></div></div>`}
 /* vitrina de «Varios»: mueble bajo con puertas correderas de cristal */
 const CAB={open:null}; // "L" | "R": la puerta que está corrida
+// Cada tipo va en sus propias baldas, en este orden; uno nuevo empieza balda aunque queden huecos en la anterior.
+const CAB_TYPES=[["sellado","Sellados"],["arte","Láminas"],["vhs","VHS"],["otro","Otros"]];
+const cabType=it=>isSealed(it)?"sellado":it.cat==="arte"?"arte":it.cat==="vhs"?"vhs":"otro";
 function cabHTML(){
   const l=visible("all").filter(isVarios),{n,v}=catTotals(l);
   const item=it=>{const q=it.qty||1;return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
@@ -838,7 +841,7 @@ function cabHTML(){
   return `<div class="cab" data-open="${CAB.open||""}">
     <div class="cab-top"><span class="cab-plate"><b>Varios</b>${n?` · ${n} pieza${n===1?"":"s"} · ${fmt0(v)}`:""}</span></div>
     <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>
-      <div class="cab-body">${l.length?l.map(item).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
+      <div class="cab-body">${l.length?CAB_TYPES.map(([k,t])=>{const g=l.filter(i=>cabType(i)===k);return g.length?`<section class="cab-group" aria-label="${t}"><span class="cab-lbl">${t}</span><div class="cab-row">${g.map(item).join("")}</div></section>`:""}).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
       <button type="button" class="cab-door l" data-door="L" aria-label="Deslizar la puerta izquierda"><span class="cab-pull"></span></button>
       <button type="button" class="cab-door r" data-door="R" aria-label="Deslizar la puerta derecha"><span class="cab-pull"></span></button></div>
     <div class="cab-base"></div><div class="cab-legs" aria-hidden="true"><i></i><i></i></div></div>`}
