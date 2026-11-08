@@ -25,6 +25,7 @@ const isGame=it=>it.cat==="videojuegos"; // en la guía: Loose · Complete · Ne
 const CARDCATS=new Set(["pokemon","dragonball","futbol"]);
 const isBoxy=it=>isSealed(it)||!CARDCATS.has(it.cat);
 const isGraded=it=>it.kind==="Graded"&&!!it.grade;
+const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS.has(it.cat)); // van a la vitrina, no a los álbumes
 function pillHTML(r,extra=""){if(r==null||!isFinite(r))return"";const c=Math.abs(r)<.005?"flat":r>0?"up":"down";const a=c==="flat"?"•":c==="up"?"▲":"▼";return `<span class="pill ${c}">${a} ${pct(r).replace(/^[+−]/,"")}${extra}</span>`}
 
 /* numbers */
@@ -77,8 +78,8 @@ function imgHTML(it,mode,lazy=true){const p=pick(it,mode);if(!p)return phHTML(it
 /* summary */
 function renderSummary(){
   const f=state.filter,byCat=f!=="all"&&f!=="pending";
-  const items=byCat?state.items.filter(i=>i.cat===f&&!i.pending):state.items,t=totals(items);
-  $("heroLabel").textContent=byCat?`Valor de ${CATS[f]}`:"Valor total de la colección";
+  const items=byCat?state.items.filter(i=>i.cat===f&&!i.pending&&!isVarios(i)):state.items,t=totals(items);
+  $("heroLabel").textContent=byCat?`Álbum de ${CATS[f]}`:"Valor total de la colección";
   $("kVal").textContent=fmt0(t.val);
   let inv2=0,val2=0;for(const it of items){if(it.paid!=null&&it.value!=null){inv2+=it.paid*(it.qty||1);val2+=it.value*(it.qty||1)}}
   const pl=val2-inv2;const el=$("kPl");
@@ -140,6 +141,7 @@ function tileHTML(it){
 }
 function renderGrid(){
   if(state.lay==="grid"&&CATS[state.filter])state.filter="all"; // la cuadrícula no tiene botones de categoría
+  else if(state.lay==="album"&&!state.q.trim()&&CATS[state.filter]&&!albumList(state.filter).length)state.filter="all";
   const am=albumMode();$("grid").hidden=am;$("calbum").hidden=!am;
   for(const b of $("cLay").querySelectorAll("button"))b.setAttribute("aria-pressed",b.dataset.clay===state.lay);
   if(am){if(!CA.anim){$("calbum").innerHTML=state.filter==="all"?shelfHTML():cAlbumHTML(state.filter);cAlbumAfter()}}
@@ -376,7 +378,7 @@ function renderInfo(force){const it=state.items.find(i=>i.id===state.sel);if(!it
 function openDetail(id){if(!state.tsel&&$("overlay").hidden)lastFocus=document.activeElement;state.tsel=null;$("dOff").parentElement.hidden=false;state.sel=id;state.dmode=modeFor((state.items.find(i=>i.id===id)||{}).cat);state.flipped=false;state.confirmDel=null;
   $("overlay").hidden=false;document.body.style.overflow="hidden";$("overlay").scrollTop=0;renderStage();renderInfo(true);$("dClose").focus();
   $("dGyro").hidden=!("DeviceOrientationEvent" in window&&matchMedia("(pointer:coarse)").matches);}
-function closeDetail(){const wasT=state.tsel,wasC=state.sel;if(wasT&&$("abook"))try{tpPutBack(wasT)}catch(e){}if(wasC&&$("cbook"))try{cPutBack(wasC)}catch(e){}if(wasC)document.querySelectorAll(".gcase.out").forEach(d=>d.classList.remove("out"));state.sel=null;state.tsel=null;TP.confirmOff=null;$("dOff").parentElement.hidden=false;$("overlay").hidden=true;document.body.style.overflow="";stopGyro();if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(e){}}
+function closeDetail(){const wasT=state.tsel,wasC=state.sel;if(wasT&&$("abook"))try{tpPutBack(wasT)}catch(e){}if(wasC&&$("cbook"))try{cPutBack(wasC)}catch(e){}if(wasC)document.querySelectorAll(".gcase.out,.citem.out").forEach(d=>d.classList.remove("out"));state.sel=null;state.tsel=null;TP.confirmOff=null;$("dOff").parentElement.hidden=false;$("overlay").hidden=true;document.body.style.overflow="";stopGyro();if(lastFocus&&lastFocus.focus)try{lastFocus.focus()}catch(e){}}
 function applyFlip(){const c=$("c3d");if(c)c.style.setProperty("--flip",state.flipped?"180deg":"0deg")}
 $("dClose").addEventListener("click",closeDetail);
 $("overlay").addEventListener("click",e=>{if(e.target===$("overlay"))closeDetail()});
@@ -790,8 +792,9 @@ const CICON={
   otro:'<path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6z"/>'
 };
 const catTotals=l=>({n:l.reduce((a,i)=>a+(i.qty||1),0),v:l.reduce((a,i)=>a+(i.value||0)*(i.qty||1),0)});
+const albumList=cat=>visible(cat).filter(i=>!isVarios(i)); // solo cartas
 function bookHTML(cat){
-  const l=visible(cat),{n,v}=catTotals(l),top=l.slice(0,9);
+  const l=albumList(cat),{n,v}=catTotals(l),top=l.slice(0,9);
   const mini=top.map(it=>`<span class="mp${isBoxy(it)?" boxy":""}">${imgHTML(it,modeFor(cat),false)}</span>`).join("")+Array.from({length:9-top.length},()=>'<span class="mp"></span>').join("");
   return `<div class="book" style="--cc:${CATVAR[cat]||"var(--c-otro)"}">
     <div class="b-back"></div><div class="b-edge"></div>
@@ -804,11 +807,11 @@ function bookHTML(cat){
 const GAMECAT="videojuegos"; // los juegos van al expositor, no a la estantería
 function shelfHTML(){
   const has=k=>state.items.some(i=>i.cat===k&&!i.pending);
-  const cats=Object.keys(CATS).filter(k=>k!==GAMECAT&&has(k));
-  if(!cats.length&&!has(GAMECAT))return `<div class="empty">${state.items.length?"Tus piezas están todas en «Por identificar».":"Aún no tienes piezas. Pulsa «+ Añadir» para empezar."}</div>`;
+  const cats=Object.keys(CATS).filter(k=>k!==GAMECAT&&albumList(k).length);
+  if(!cats.length&&!has(GAMECAT)&&!state.items.some(isVarios))return `<div class="empty">${state.items.length?"Tus piezas están todas en «Por identificar».":"Aún no tienes piezas. Pulsa «+ Añadir» para empezar."}</div>`;
   const books=cats.map(k=>`<button type="button" class="shelfbook" data-album="${k}" aria-label="Coger el álbum de ${esc(CATS[k])}">${bookHTML(k)}</button>`).join("");
-  return `<div class="room"><div class="bookcase"><div class="bc-crown"></div><div class="bc-inner"><div class="shelf">${books||'<div class="msg bc-empty">Aquí irán tus álbumes de cartas</div>'}</div></div><div class="bc-plinth"></div></div>${rackHTML()}</div>
-    <div class="msg ahint">Coge un álbum de la estantería o saca un juego del expositor</div>`}
+  return `<div class="room"><div class="bookcase"><div class="bc-crown"></div><div class="bc-inner"><div class="shelf">${books||'<div class="msg bc-empty">Aquí irán tus álbumes de cartas</div>'}</div></div><div class="bc-plinth"></div></div>${rackHTML()}${cabHTML()}</div>
+    <div class="msg ahint">Coge un álbum de la estantería, saca un juego del expositor o desliza el cristal de la vitrina</div>`}
 /* expositor de juegos: vitrina oscura con neón azul y las cajas de frente sobre baldas de luz */
 const platOf=it=>{const m=/\b(?:PS|PlayStation\s*)([1-5])\b|\b(PSP|PS\s?Vita|PSX|PSone)\b/i.exec([it.set,it.name,it.code].join(" "));
   if(!m)return"";if(m[1])return"PS"+m[1];const x=m[2].toUpperCase().replace(/\s/g,"");return x==="PSX"||x==="PSONE"?"PS1":x==="PSVITA"?"VITA":x};
@@ -826,6 +829,25 @@ function rackHTML(){
     <div class="rk-sub">${n?`${n} juego${n===1?"":"s"} · ${fmt0(v)}`:"Sin juegos todavía"}</div>
     <div class="rk-body">${games.map(box).join("")}${Array.from({length:slots-games.length},()=>'<div class="gslot"><span class="gcase empty"></span></div>').join("")}</div>
     <div class="rk-base" aria-hidden="true"></div></div>`}
+/* vitrina de «Varios»: mueble bajo con puertas correderas de cristal */
+const CAB={open:null}; // "L" | "R": la puerta que está corrida
+function cabHTML(){
+  const l=visible("all").filter(isVarios),{n,v}=catTotals(l);
+  const item=it=>{const q=it.qty||1;return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
+    <span class="ci-pic">${imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+  return `<div class="cab" data-open="${CAB.open||""}">
+    <div class="cab-top"><span class="cab-plate"><b>Varios</b>${n?` · ${n} pieza${n===1?"":"s"} · ${fmt0(v)}`:""}</span></div>
+    <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>
+      <div class="cab-body">${l.length?l.map(item).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
+      <button type="button" class="cab-door l" data-door="L" aria-label="Deslizar la puerta izquierda"><span class="cab-pull"></span></button>
+      <button type="button" class="cab-door r" data-door="R" aria-label="Deslizar la puerta derecha"><span class="cab-pull"></span></button></div>
+    <div class="cab-base"></div><div class="cab-legs" aria-hidden="true"><i></i><i></i></div></div>`}
+// Tocar el cristal abre ese lado: su puerta se corre sobre la otra. Con teclado, cada puerta se abre o se cierra.
+function cabDoor(btn,e){const cab=btn.closest(".cab"),r=cab.getBoundingClientRect();
+  const side=e.detail===0?btn.dataset.door:(e.clientX<r.left+r.width/2?"L":"R");
+  CAB.open=e.detail===0&&CAB.open===side?null:side;cab.dataset.open=CAB.open||""}
+function cabPull(btn){const id=btn.dataset.varios;if(reduce||!btn.animate){openDetail(id);return}
+  btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 function gamePull(btn){const id=btn.dataset.game;if(reduce||!btn.animate){openDetail(id);return}
   btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 function cPocket(it){const q=it.qty||1;
@@ -833,7 +855,7 @@ function cPocket(it){const q=it.qty||1;
     <span class="pc">${imgHTML(it,modeFor(it.cat))}</span><span class="sleeve"></span>
     <span class="plab"><b>${it.value==null?"—":fmt0(it.value*q)}</b> ${esc(it.name)}</span>${it.grade?`<span class="pgr">${esc(it.grade)}</span>`:""}${q>1?`<span class="pok">×${q}</span>`:""}</button>`}
 function cAlbumHTML(cat){
-  const list=visible(cat),pages=Math.max(1,Math.ceil(list.length/9)),per=tpPer();
+  const list=albumList(cat),pages=Math.max(1,Math.ceil(list.length/9)),per=tpPer();
   let pg=Math.min(CA.pg[cat]||0,pages-1);pg-=pg%per;CA.pg[cat]=pg;CA.cat=cat;CA.pages=pages;
   const page=i=>{const l=list.slice(i*9,i*9+9);return `<div class="apage${i%2?" right":" left"}"><div class="apgrid">${l.map(cPocket).join("")}${Array.from({length:9-l.length},()=>'<span class="pocket empty"><span class="sleeve"></span></span>').join("")}</div><div class="afoot">Página ${i+1}</div></div>`};
   const spread=[page(pg)];if(per===2&&pg+1<pages)spread.push(page(pg+1));
@@ -852,7 +874,7 @@ function cAlbumHTML(cat){
     </section></div>`}
 // Evolución de la categoría del álbum abierto: lo mismo que la pestaña Evolución, pero solo con sus piezas.
 function renderAlbumEvo(cat){if(!$("aevoChart"))return;
-  const items=visible(cat),cut=state.range==="all"?"":daysAgo(+state.range),pts=seriesFor(items).filter(p=>p.d>cut),col=CATVAR[cat]||"var(--c-otro)";
+  const items=albumList(cat),cut=state.range==="all"?"":daysAgo(+state.range),pts=seriesFor(items).filter(p=>p.d>cut),col=CATVAR[cat]||"var(--c-otro)";
   $("aevoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:200,w:cw("aevoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"gae"}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
   const last=pts[pts.length-1],first=pts[0],chg=$("aevoChg");$("aevoVal").textContent=last?fmt0(last.value):"—";
   if(pts.length>1){const d=last.value-first.value;chg.textContent=(d>=0?"+":"−")+fmt0(Math.abs(d))+" · "+pct(first.value?d/first.value:0);chg.className="v "+(d>=0?"pos":"neg")}else{chg.textContent="—";chg.className="v"}
@@ -947,6 +969,8 @@ async function closeAlbum(){
 $("calbum").addEventListener("click",e=>{
   const a=e.target.closest("[data-album]");if(a){openAlbum(a.dataset.album,a);return}
   const gm=e.target.closest("[data-game]");if(gm){gamePull(gm);return}
+  const dr=e.target.closest("[data-door]");if(dr){cabDoor(dr,e);return}
+  const vr=e.target.closest("[data-varios]");if(vr){cabPull(vr);return}
   if(e.target.closest("[data-cclose]")){closeAlbum();return}
   const ar=e.target.closest("[data-ar]");if(ar){state.range=ar.dataset.ar;savePref("mc.range",state.range);document.querySelectorAll("[data-ar]").forEach(b=>b.setAttribute("aria-pressed",b===ar));renderAlbumEvo(CA.cat);return}
   const mv=e.target.closest("[data-mid]");if(mv){openDetail(mv.dataset.mid);return}

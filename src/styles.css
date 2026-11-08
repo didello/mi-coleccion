@@ -396,7 +396,7 @@ img{max-width:100%}
 /* ---- álbumes de la colección ---- */
 /* la habitación: estantería de madera a la izquierda y expositor de juegos a la derecha, sobre el mismo suelo */
 .room{--wood:#5a3a22;--wood-hi:#7d5434;--wood-lo:#2f1d10;position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px;align-items:end;width:100%;padding-bottom:18px}
-.room::after{content:"";position:absolute;left:-4%;right:-4%;bottom:0;height:40px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
+.room::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
 @media (max-width:760px){.room{grid-template-columns:minmax(0,1fr);gap:30px}.rack{justify-self:center;width:min(420px,100%)}}
 
 .bookcase{position:relative;border-radius:6px 6px 3px 3px;padding:0 14px;
@@ -567,3 +567,44 @@ img{max-width:100%}
 .salehead .nm{font-weight:700;font-size:14px}
 .saleundo{font-size:12px;padding:5px 10px}
 @media (max-width:520px){.tabs{gap:1px;padding:3px}.tabs button{padding:8px 6px;font-size:12.5px}.tabs .cnt{font-size:10px;margin-left:3px}}
+/* vitrina de «Varios»: aparador de madera con puertas correderas de cristal */
+.cab{grid-column:1/-1;position:relative;margin-top:14px;padding:0 10px}
+.cab-top{position:relative;z-index:4;display:flex;justify-content:center;align-items:center;height:26px;margin:0 -10px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#9a6a42,var(--wood) 45%,var(--wood-lo));box-shadow:0 6px 10px -4px rgba(0,0,0,.6)}
+.cab-plate{padding:2px 12px;border-radius:3px;background:linear-gradient(180deg,#f6dfab,#c99d52 55%,#9b7233);color:#2a1a08;font-family:var(--mono);font-size:11px;box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 2px 4px rgba(0,0,0,.55);white-space:nowrap}
+.cab-plate b{font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.cab-box{position:relative;overflow:hidden;padding:28px 22px 12px;border-left:12px solid var(--wood);border-right:12px solid var(--wood);
+  background:radial-gradient(90% 60% at 50% 0%,rgba(255,206,140,.2),transparent 70%),repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0 2px,transparent 2px 9px),linear-gradient(180deg,#2a1b11,#150d08)}
+.cab-led{position:absolute;left:3%;right:3%;top:0;height:4px;border-radius:0 0 4px 4px;background:#ffe6bd;box-shadow:0 0 16px 4px rgba(255,204,128,.55),0 0 70px 14px rgba(255,190,110,.16)}
+.cab-body{--row:186px;display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));grid-auto-rows:var(--row);column-gap:14px;min-height:var(--row);margin:0 -10px;padding:0 10px;
+  background:repeating-linear-gradient(180deg,transparent 0 calc(var(--row) - 10px),rgba(240,250,255,.6) calc(var(--row) - 10px) calc(var(--row) - 9px),rgba(195,230,250,.2) calc(var(--row) - 9px) var(--row))}
+.cab-empty{grid-column:1/-1;align-self:center;text-align:center;color:#d9b98f}
+.cslot{position:relative;display:flex;align-items:flex-end;justify-content:center;padding:18px 4px 13px}
+.citem{position:relative;z-index:1;display:block;width:100%;height:100%;padding:0;border:0;border-radius:0;background:none;font-weight:400;cursor:pointer;transition:transform .25s cubic-bezier(.2,.7,.2,1)}
+.citem:hover{border:0}
+.ci-pic{display:flex;align-items:flex-end;justify-content:center;width:100%;height:100%}
+.ci-pic img{display:block;max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 12px 10px rgba(0,0,0,.65))}
+.ci-pic .ph{width:78%;height:auto;aspect-ratio:3/4;font-size:11px;border-radius:4px;box-shadow:0 12px 18px -6px rgba(0,0,0,.7)}
+.citem.art .ci-pic img,.citem.art .ci-pic .ph{padding:6px;background:#f2ece0;border:4px solid #2b2420;border-radius:2px;box-shadow:0 12px 18px -6px rgba(0,0,0,.75)}
+.ci-tag{position:absolute;left:50%;top:-6px;z-index:2;padding:1px 7px;border-radius:99px;background:#ffd28f;color:#2a1607;font-family:var(--mono);font-size:10.5px;font-weight:700;white-space:nowrap;opacity:0;transform:translate(-50%,4px);transition:opacity .2s,transform .2s;box-shadow:0 0 12px rgba(255,190,110,.6)}
+.citem:hover,.citem:focus-visible{transform:translateY(-8px) scale(1.06);outline:none}
+.citem:hover .ci-tag,.citem:focus-visible .ci-tag{opacity:1;transform:translate(-50%,0)}
+.citem.out{transform:translateY(-30px) scale(1.3)!important;opacity:0;transition:transform .38s cubic-bezier(.4,0,.6,1),opacity .3s .08s}
+.cab-door{position:absolute;top:8px;bottom:6px;width:51%;padding:0;border:0;border-radius:3px;cursor:pointer;font-weight:400;
+  background:linear-gradient(112deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.05) 18%,transparent 34%,transparent 66%,rgba(255,255,255,.09) 76%,transparent 86%),rgba(175,215,235,.07);
+  box-shadow:inset 0 0 0 3px #b7bbc2,inset 0 0 0 4px rgba(0,0,0,.45),inset 0 0 26px rgba(190,225,245,.08),0 0 0 1px rgba(0,0,0,.35);transition:transform .6s cubic-bezier(.65,0,.35,1),background-color .2s}
+.cab-door:hover{border:0;background-color:rgba(190,225,245,.11)}
+.cab-door:focus-visible{outline:2px solid var(--lime);outline-offset:-6px}
+.cab-door.l{left:4px;z-index:3}
+.cab-door.r{right:4px;z-index:2}
+.cab[data-open="L"] .cab-door.l{transform:translateX(calc(96% - 8px))}
+.cab[data-open="R"] .cab-door.r{transform:translateX(calc(-96% + 8px))}
+.cab[data-open="L"] .cab-door.l,.cab[data-open="R"] .cab-door.r{z-index:3}
+.cab[data-open="R"] .cab-door.l{z-index:2}
+.cab-pull{position:absolute;top:50%;width:6px;height:34%;transform:translateY(-50%);border-radius:3px;background:linear-gradient(90deg,#7f848b,#eef0f3 50%,#7f848b);box-shadow:0 2px 6px rgba(0,0,0,.6)}
+.cab-door.l .cab-pull{right:12px}
+.cab-door.r .cab-pull{left:12px}
+.cab-base{height:16px;margin:0 -4px;border-radius:0 0 3px 3px;background:linear-gradient(180deg,var(--wood-lo),var(--wood) 30%,#3a2414);box-shadow:inset 0 3px 0 rgba(0,0,0,.4)}
+.cab-legs{display:flex;justify-content:space-between;padding:0 5%}
+.cab-legs i{display:block;width:14px;height:14px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,#1b110a,#3a2516,#1b110a)}
+@media (max-width:520px){.cab-box{padding:24px 12px 10px;border-width:9px}.cab-body{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));column-gap:10px}.cab-body{--row:148px}.cab-top{margin:0 -6px}}
+@media (prefers-reduced-motion:reduce){.cab-door,.citem,.ci-tag{transition:none}}
