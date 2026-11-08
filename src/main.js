@@ -47,7 +47,8 @@ function seriesFor(items){
 }
 // Paso «redondo» para el eje: 1, 2, 2,5 o 5 × potencia de 10, para que salgan unas n marcas.
 function niceStep(range,n){const raw=range/Math.max(1,n),mag=Math.pow(10,Math.floor(Math.log10(raw)));for(const m of [1,2,2.5,5,10])if(raw<=m*mag)return m*mag;return 10*mag}
-function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,secondColor=null,id="g",w=600,ticks=3,box=null}={}){
+const CHARTS={}; // forma de las gráficas que se dibujan dentro de un texto (ficha), para el detalle al pasar el cursor
+function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,secondColor=null,id="g",w=600,ticks=3,box=null,key=null}={}){
   if(!points.length)return"";const[pt,pr,pb,pl]=labels?pad:[6,6,6,6];
   const all=points.map(p=>p.v).concat(second?second.map(p=>p.v):[]);
   let lo=Math.min(...all),hi=Math.max(...all);if(lo===hi){lo=lo*0.9;hi=hi*1.1||1}
@@ -62,7 +63,8 @@ function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)"
   if(second&&second.length>1)g+=`<path d="${path(second)}" style="${secondColor?`fill:none;stroke:${secondColor};stroke-width:2.5;stroke-linejoin:round`:"fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4"}"/>`;
   if(points.length>1)g+=`<path d="${path(points)}L${x(points.length-1)},${h-pb}L${x(0)},${h-pb}Z" style="fill:url(#${id})"/><path d="${path(points)}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-linejoin:round"/>`;
   const li=points.length-1;g+=`<circle cx="${x(li)}" cy="${y(points[li].v)}" r="5" style="fill:${color};stroke:var(--bg);stroke-width:2"/>`;
-  if(box)box._chart={points,second,x,y,w,h,color,secondColor:secondColor||"var(--faint)"}; // para el detalle al pasar el cursor
+  const geo={points,second,x,y,w,h,color,secondColor:secondColor||"var(--faint)"}; // para el detalle al pasar el cursor
+  if(box)box._chart=geo;if(key)CHARTS[key]=geo;
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Gráfica de evolución del valor">${g}</svg>`;
 }
 // Al pasar el cursor (o el dedo) por la gráfica: línea vertical en el día más cercano, puntos en las dos líneas y sus importes exactos.
@@ -114,7 +116,7 @@ function renderSummary(){
   const m=state.meta;
   $("updated").textContent=m&&m.updated?`Precios revisados el ${dateES(m.updated)} · próxima: ${m.nextCheck?dateES(m.nextCheck):"cada día"}`:"Aún sin revisión de precios";
   const pts=seriesFor(items);
-  $("heroChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:150,w:cw("heroChart"),color:byCat?CATVAR[f]:"var(--lime)",second:pts.map(p=>({d:p.d,v:p.invested})),id:"gh"}):"";
+  $("heroChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:150,w:cw("heroChart"),color:byCat?CATVAR[f]:"var(--lime)",second:pts.map(p=>({d:p.d,v:p.invested})),id:"gh",ticks:5,pad:[10,10,22,58],box:$("heroChart")}):"";
   $("heroCap").textContent=pts.length<2?"El historial empieza con la primera revisión; cada revisión diaria añade un punto.":`Valor de mercado desde el ${dateES(pts[0].d)} · línea discontinua: invertido`;
   $("cntCol").textContent=state.items.length;$("cntWish").textContent=state.wish.length||"";
   renderEbayDue();
@@ -247,7 +249,7 @@ function renderSales(){const l=soldList(),has=l.length>0;$("salesEmpty").hidden=
   const days=[...new Set(l.map(i=>i.sold.d))].sort(),start=new Date(days[0]+"T12:00:00Z");start.setUTCDate(start.getUTCDate()-1);
   const sold=[{d:start.toISOString().slice(0,10),v:0}],bought=[{d:sold[0].d,v:0}];let a=0,b=0;
   for(const d of days){for(const i of l)if(i.sold.d===d){a+=i.sold.price;b+=soldCost(i)||0}sold.push({d,v:+a.toFixed(2)});bought.push({d,v:+b.toFixed(2)})}
-  $("salesChart").innerHTML=lineSVG(sold,{h:240,w:cw("salesChart"),color:"var(--lime)",second:bought,secondColor:"var(--loss)",id:"gs"});
+  $("salesChart").innerHTML=lineSVG(sold,{h:240,w:cw("salesChart"),color:"var(--lime)",second:bought,secondColor:"var(--loss)",id:"gs",ticks:7,pad:[12,10,22,62],box:$("salesChart")});
   $("salesList").innerHTML=l.map(saleCard).join("")}
 $("salesList").addEventListener("click",async e=>{const b=e.target.closest("[data-unsell]");if(!b||!db)return;
   try{await db.doc("items/"+b.dataset.unsell).update({sold:null});toast("Venta deshecha: la carta vuelve a tu colección")}catch(err){toast("No se pudo deshacer. Inténtalo otra vez.")}});
@@ -345,7 +347,7 @@ function infoHTML(it){
 
     <div class="card">
       <div class="cardhead"><h3 style="font-size:16px">Tendencia</h3>${tr==null?`<span class="pill flat">sin datos</span>`:pillHTML(tr," · 30 d")}</div>
-      ${h.length?lineSVG(h.map(p=>({d:p.d,v:p.v})),{h:130,w:Math.max(300,Math.min(600,$("info").clientWidth-34||600)),id:"gd",color:tr!=null&&tr<-.005?"var(--loss)":"var(--lime)"}):`<div class="msg">Aún no hay historial de precios para esta pieza.</div>`}
+      ${h.length?`<div class="dchart">`+lineSVG(h.map(p=>({d:p.d,v:p.v})),{h:130,w:Math.max(300,Math.min(600,$("info").clientWidth-34||600)),id:"gd",color:tr!=null&&tr<-.005?"var(--loss)":"var(--lime)",ticks:5,pad:[10,10,22,58],key:"gd"})+`</div>`:`<div class="msg">Aún no hay historial de precios para esta pieza.</div>`}
       <div class="stats3">
         <div class="stat"><div class="l">Media 7 días</div><div class="v">${a7?fmt(a7.v):"—"}</div><div class="s">${nAvg(a7)}</div></div>
         <div class="stat"><div class="l">Media 30 días</div><div class="v">${a30?fmt(a30.v):"—"}</div><div class="s">${nAvg(a30)}</div></div>
@@ -415,7 +417,7 @@ function renderStage(){const it=state.items.find(i=>i.id===state.sel);if(!it)ret
 }
 function renderInfo(force){const it=state.items.find(i=>i.id===state.sel);if(!it){closeDetail();return}
   const a=document.activeElement;if(!force&&a&&$("info").contains(a)&&a.tagName==="INPUT")return;
-  $("info").innerHTML=infoHTML(it)}
+  $("info").innerHTML=infoHTML(it);const dc=$("info").querySelector(".dchart");if(dc&&CHARTS.gd){dc._chart=CHARTS.gd;chartHover(dc,["Precio"])}}
 function openDetail(id){if(!state.tsel&&$("overlay").hidden)lastFocus=document.activeElement;state.tsel=null;$("dOff").parentElement.hidden=false;state.sel=id;state.dmode=modeFor((state.items.find(i=>i.id===id)||{}).cat);state.flipped=false;state.confirmDel=null;
   $("overlay").hidden=false;document.body.style.overflow="hidden";$("overlay").scrollTop=0;renderStage();renderInfo(true);$("dClose").focus();
   $("dGyro").hidden=!("DeviceOrientationEvent" in window&&matchMedia("(pointer:coarse)").matches);}
@@ -930,7 +932,7 @@ function cAlbumHTML(cat){
 // Evolución de la categoría del álbum abierto: lo mismo que la pestaña Evolución, pero solo con sus piezas.
 function renderAlbumEvo(cat){if(!$("aevoChart"))return;
   const items=albumList(cat),cut=state.range==="all"?"":daysAgo(+state.range),pts=seriesFor(items).filter(p=>p.d>cut),col=CATVAR[cat]||"var(--c-otro)";
-  $("aevoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:200,w:cw("aevoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"gae"}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
+  $("aevoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:200,w:cw("aevoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"gae",ticks:6,pad:[12,10,22,62],box:$("aevoChart")}):`<div class="empty">Aún no hay precios en este periodo.</div>`;chartHover($("aevoChart"));
   const last=pts[pts.length-1],first=pts[0],chg=$("aevoChg");$("aevoVal").textContent=last?fmt0(last.value):"—";
   if(pts.length>1){const d=last.value-first.value;chg.textContent=(d>=0?"+":"−")+fmt0(Math.abs(d))+" · "+pct(first.value?d/first.value:0);chg.className="v "+(d>=0?"pos":"neg")}else{chg.textContent="—";chg.className="v"}
   const mv=items.map(it=>({it,r:trendOf(it,state.range)})).filter(x=>x.r!=null&&Math.abs(x.r)>=.0005).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,5);
@@ -1047,7 +1049,7 @@ let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout((
 function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();renderSalesCount();if(state.tab==="sales")renderSales();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
 setTab(state.tab);
 addKinds();
-chartHover($("evoChart"));
+chartHover($("evoChart"));chartHover($("heroChart"));chartHover($("salesChart"),["Vendido","Comprado"]);
 
 /* arranque (con sesión iniciada) */
 const unsubs=[];
