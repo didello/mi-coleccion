@@ -397,50 +397,57 @@ img{max-width:100%}
 /* la habitación: estantería de madera a la izquierda y expositor de juegos a la derecha, sobre el mismo suelo */
 .room{--wood:#5a3a22;--wood-hi:#7d5434;--wood-lo:#2f1d10;position:relative;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:26px;align-items:end;width:100%;padding-bottom:18px}
 .room::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.7),transparent)}
-@media (max-width:760px){.room{grid-template-columns:minmax(0,1fr);gap:30px}.rack{justify-self:center;width:min(420px,100%)}}
+@media (max-width:760px){.room{grid-template-columns:minmax(0,1fr);gap:30px}}
 
 /* fondo de la estantería: tablones verticales y luz cálida desde arriba */
 /* cada fila tiene la misma altura, así las baldas son un fondo que se repite */
 /* al pasar por encima, el álbum se saca un poco de la balda, como cuando lo vas a coger */
 
-/* expositor de juegos: videoclub de los 90, con el logo de PlayStation en tubo de neón blanco, baldas de madera y moqueta */
-.rack{position:relative;display:flex;flex-direction:column;overflow:hidden;border-radius:16px;background:#151016;
-  box-shadow:0 30px 50px -24px rgba(0,0,0,.9),inset 0 0 0 1px rgba(255,255,255,.05)}
-.rk-sign{display:flex;align-items:center;justify-content:center;gap:12px;padding:24px 14px 6px;background:radial-gradient(70% 120% at 50% 0%,rgba(120,170,255,.13),transparent 70%)}
-.rk-sign svg{display:block;overflow:visible;filter:drop-shadow(0 0 .6px #fff) drop-shadow(0 0 3px rgba(200,228,255,.95)) drop-shadow(0 0 10px rgba(110,170,255,.55))}
-.rk-sign svg *{fill:none;stroke:#fff;stroke-width:2px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
-.rk-sym{width:46px;height:42px}.rk-word{width:168px;height:33px}
-.rk-sub{text-align:center;padding:6px 0 14px;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#7ff6ff;text-shadow:0 0 6px #2ad7ff}
-/* baldas de madera: cada hueco pinta su trozo de canto y se juntan en una balda continua */
-.rk-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;padding:0 14px;background:linear-gradient(180deg,#2b1c12,#3a2616)}
-.gslot{position:relative;display:flex;align-items:flex-end;justify-content:center;min-height:118px;padding:16px 2px 30px}
-.gslot::after{content:"";position:absolute;left:-5px;right:-5px;bottom:4px;height:15px;background:linear-gradient(180deg,#d4ad74,#9a6d3d 45%,#6b4524);box-shadow:0 5px 7px rgba(0,0,0,.55)}
-.gslot:nth-child(3n+1)::after{left:-14px}.gslot:nth-child(3n)::after{right:-14px}
-/* etiqueta de precio pegada en el canto */
-.g-price{position:absolute;left:50%;bottom:6px;z-index:2;transform:translateX(-50%) rotate(-3deg);padding:0 5px;border-radius:2px;background:#ffe14a;color:#1b1464;font-family:var(--mono);font-size:10px;font-weight:700;line-height:1.35;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.4)}
-/* caja: PS1 es casi cuadrada (jewel case); de PS2 en adelante, caja de DVD vertical */
-.gcase{position:relative;z-index:1;display:block;width:100%;aspect-ratio:1.1;padding:0;border:0;border-radius:3px;background:#0b0c10;font-weight:400;cursor:pointer;
-  box-shadow:0 10px 18px -6px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.12);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
-.gcase:not(.plat-ps1):not(.empty){aspect-ratio:.72;width:78%}
-.gcase.empty{cursor:default;aspect-ratio:.72;width:78%;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1px rgba(255,220,170,.1)}
-.g-spine{position:absolute;left:0;top:0;bottom:0;width:15%;display:grid;place-items:center;overflow:hidden;background:linear-gradient(90deg,#000,#1a1b20 60%,#050507);border-right:1px solid rgba(255,255,255,.12)}
-.g-spine span{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--body);font-weight:700;color:#fff;white-space:nowrap;letter-spacing:.02em}
-.g-spine span{font-size:9px}
-@media (max-width:520px){.g-spine span{font-size:7.5px}}
-.g-cover{position:absolute;left:15%;right:0;top:0;bottom:0;overflow:hidden;background:#11131a}
+/* expositor de juegos: mueble negro con baldas iluminadas; mide como la vitrina de Varios (cornisa de 62px, baldas de --row, piezas de --ih) */
+.room>.rack,.room>.cab.cab{align-self:stretch;display:flex;flex-direction:column}
+.room>.cab .cab-box{flex:1}
+.rack{--row:152px;--ih:100px;--neon:#4aa8ff;position:relative;padding:0 10px}
+.rk-top{position:relative;z-index:2;display:flex;flex-direction:column;gap:4px;justify-content:center;align-items:center;height:62px;margin:0 -10px;border-radius:5px 5px 2px 2px;
+  background:linear-gradient(180deg,#2a2b30,#121316 45%,#08080a);box-shadow:0 6px 10px -4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12)}
+.rk-logo{display:flex;align-items:center;gap:9px}
+.rk-logo svg{display:block;overflow:visible;filter:drop-shadow(0 0 .6px #fff) drop-shadow(0 0 3px rgba(200,228,255,.95)) drop-shadow(0 0 10px rgba(110,170,255,.55))}
+.rk-logo svg *{fill:none;stroke:#fff;stroke-width:1.8px;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.rk-sym{width:32px;height:29px}.rk-word{width:118px;height:23px}
+.rk-sub{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#9fd2ff;text-shadow:0 0 6px rgba(74,168,255,.8);white-space:nowrap}
+/* caja del mueble: laterales lacados en negro y, en cada balda, la tira de luz cálida que alumbra la de abajo */
+.rk-box{position:relative;flex:1;overflow:hidden;padding:28px 18px 0;border-left:12px solid #111215;border-right:12px solid #111215;
+  background:
+    repeating-linear-gradient(180deg,rgba(255,196,128,.17) 0,transparent 46px,transparent calc(var(--row) - 12px),#3a3b40 calc(var(--row) - 12px),#16171a calc(var(--row) - 4px),#ffe2b0 calc(var(--row) - 4px),#ffcf8a var(--row)) 0 28px/100% var(--row),
+    linear-gradient(180deg,#1b1a1c,#0d0d0f);
+  box-shadow:inset 6px 0 10px -6px rgba(0,0,0,.9),inset -6px 0 10px -6px rgba(0,0,0,.9)}
+.rk-row{display:flex;flex-wrap:wrap;align-items:flex-end;column-gap:14px}
+/* letrero de cada consola: caja de neón azul encima de su primer juego */
+.rk-neon{position:absolute;left:2px;top:4px;z-index:2;padding:1px 8px;border:1.5px solid var(--neon);border-radius:5px;font-family:var(--display);font-size:10px;font-weight:800;letter-spacing:.08em;line-height:1.3;color:#eaf5ff;
+  text-shadow:0 0 4px var(--neon),0 0 9px rgba(74,168,255,.8);box-shadow:0 0 6px rgba(74,168,255,.8),inset 0 0 6px rgba(74,168,255,.55);pointer-events:none}
+.gslot{position:relative;display:flex;align-items:flex-end;justify-content:center;flex:0 0 auto;height:var(--row);padding:26px 2px 13px}
+/* etiqueta de precio pegada en el canto de la balda */
+.g-price{position:absolute;left:50%;bottom:1px;z-index:2;transform:translateX(-50%) rotate(-3deg);padding:0 5px;border-radius:2px;background:#ffe14a;color:#1b1464;font-family:var(--mono);font-size:9.5px;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.5)}
+/* caja de juego: todas iguales, con la franja de la consola arriba */
+.gcase{position:relative;z-index:1;display:block;height:var(--ih);width:auto;aspect-ratio:.8;padding:0;border:0;border-radius:3px;background:#0b0c10;font-weight:400;cursor:pointer;overflow:hidden;
+  box-shadow:0 10px 16px -6px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.14);transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s}
+.g-band{position:absolute;left:0;right:0;top:0;height:13%;display:flex;align-items:center;padding-left:5px;background:#0a0a0c;color:#fff;font-family:var(--display);font-size:8px;font-weight:800;letter-spacing:.04em;white-space:nowrap;overflow:hidden;z-index:1}
+.plat-ps5 .g-band{background:#f4f5f8;color:#111}.plat-ps4 .g-band{background:#0b56c2}.plat-ps3 .g-band{background:linear-gradient(90deg,#000,#2a2c31)}
+.plat-vita .g-band,.plat-psp .g-band{background:#1d2f5c}
+.g-cover{position:absolute;left:0;right:0;top:13%;bottom:0;overflow:hidden;background:#11131a}
 .g-cover img{width:100%;height:100%;object-fit:cover;display:block}
-.g-cover .ph{font-size:11px;padding:6px;color:#dfe9ff;background:radial-gradient(120% 90% at 30% 10%,#26324f,#0c111d)}
-.g-gloss{position:absolute;inset:0;pointer-events:none;border-radius:3px;background:linear-gradient(120deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.06) 30%,transparent 46%,transparent 78%,rgba(255,255,255,.1) 92%)}
-.plat-ps2 .g-spine,.plat-ps3 .g-spine,.plat-ps4 .g-spine,.plat-psp .g-spine{width:13%}
-.plat-ps2 .g-spine{background:linear-gradient(90deg,#000,#16192a)}.plat-ps3 .g-spine{background:linear-gradient(90deg,#0d2c55,#1d4f8a)}.plat-ps4 .g-spine{background:linear-gradient(90deg,#0f3d80,#1f5fb4)}
-.plat-ps5 .g-spine{background:linear-gradient(90deg,#d7dbe3,#f4f6fa)}.plat-ps5 .g-spine span{color:#111}.plat-vita .g-spine{background:linear-gradient(90deg,#173c78,#2c5fae)}
-.plat-ps2 .g-cover,.plat-ps3 .g-cover,.plat-ps4 .g-cover,.plat-ps5 .g-cover,.plat-psp .g-cover,.plat-vita .g-cover{left:13%}
-/* al pasar por encima, la caja se adelanta con un brillo de neón */
-.gcase:not(.empty):hover,.gcase:not(.empty):focus-visible{transform:translateY(-8px) scale(1.07);box-shadow:0 18px 26px -8px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.7),0 0 20px rgba(255,79,216,.45)}
-.gcase:focus-visible{outline:none}
+.g-cover .ph{font-size:10px;padding:5px;color:#dfe9ff;background:radial-gradient(120% 90% at 30% 10%,#26324f,#0c111d)}
+.g-gloss{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:3px;background:linear-gradient(120deg,rgba(255,255,255,.26) 0%,rgba(255,255,255,.06) 30%,transparent 46%,transparent 78%,rgba(255,255,255,.1) 92%)}
+.gcase:hover,.gcase:focus-visible{transform:translateY(-8px) scale(1.07);outline:none;box-shadow:0 18px 26px -8px rgba(0,0,0,.95),0 0 0 1px rgba(255,255,255,.7),0 0 18px rgba(74,168,255,.5)}
 .gcase.out{transform:translateY(-30px) scale(1.35)!important;opacity:0;transition:transform .38s cubic-bezier(.4,0,.6,1),opacity .3s .08s}
-/* moqueta de cine */
-.rk-carpet{height:40px;background:radial-gradient(circle at 20% 30%,#ff4fd8 2px,transparent 3px) 0 0/22px 22px,radial-gradient(circle at 70% 70%,#5ff3ff 2px,transparent 3px) 0 0/26px 26px,radial-gradient(circle at 40% 80%,#ffe14a 1.5px,transparent 2.5px) 0 0/18px 18px,#1b1235;box-shadow:inset 0 8px 10px rgba(0,0,0,.5)}
+.rk-empty{padding:40px 0;text-align:center;color:#9fb0c8}
+/* zócalo negro con los cuatro símbolos en neón (mide lo mismo que la base y las patas de la vitrina) */
+.rk-plinth{display:flex;justify-content:center;align-items:center;gap:14px;height:30px;margin:0 -4px;border-radius:0 0 3px 3px;background:linear-gradient(180deg,#08080a,#18191c 35%,#0b0b0d);box-shadow:inset 0 3px 0 rgba(0,0,0,.5)}
+.rk-plinth i{display:block;width:13px;height:13px;box-sizing:border-box}
+.rk-plinth .tri{background:#3fe0a6;clip-path:polygon(50% 0,100% 92%,0 92%,50% 0,50% 24%,18% 80%,82% 80%,50% 24%);filter:drop-shadow(0 0 4px #3fe0a6)}
+.rk-plinth .cir{border:2px solid #ff4d5e;border-radius:50%;box-shadow:0 0 6px #ff4d5e,inset 0 0 4px #ff4d5e}
+.rk-plinth .crs{background:linear-gradient(45deg,transparent 42%,#6aa8ff 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,#6aa8ff 42% 58%,transparent 58%);filter:drop-shadow(0 0 4px #6aa8ff)}
+.rk-plinth .sqr{border:2px solid #ff7ad9;transform:scale(.88);box-shadow:0 0 6px #ff7ad9,inset 0 0 4px #ff7ad9}
+@media (max-width:520px){.rack{--row:130px;--ih:84px}.rk-box{padding:24px 12px 0;border-width:9px;background-position:0 24px,0 0}.rk-top{margin:0 -6px}}
 @media (prefers-reduced-motion:reduce){.gcase{transition:none}}
 
 
