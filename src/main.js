@@ -847,7 +847,8 @@ function slabHTML(it,big){const q=it.qty||1,g=isGraded(it)?gradeParts(it.grade):
   return `<${tag} class="tl" ${attrs}><span class="sl-pic">${imgHTML(it,modeFor(it.cat),big)}</span>${extra}</${tag}>`}
 // Todos los marcos con las mismas columnas; los huecos de la última fila se ven vacíos.
 const FRAME_COLS=5;
-function frameHTML(cat,big){const l=albumList(cat),gaps=(FRAME_COLS-l.length%FRAME_COLS)%FRAME_COLS||(l.length?0:FRAME_COLS);
+// rows: filas mínimas; en la pared todos los marcos usan las del que más cartas tiene, para que midan igual.
+function frameHTML(cat,big,rows=1){const l=albumList(cat),gaps=Math.max(rows*FRAME_COLS,Math.ceil(l.length/FRAME_COLS)*FRAME_COLS||FRAME_COLS)-l.length;
   return `<div class="frm" style="--cols:${FRAME_COLS}"><div class="frm-in">${l.map(it=>slabHTML(it,big)).join("")}${"<span class=\"sl-empty\" aria-hidden=\"true\"></span>".repeat(gaps)}</div></div>`}
 function plateHTML(cat){const{n,v}=catTotals(albumList(cat));return `<span class="cab-plate">${esc(CATS[cat])}</span><span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`}
 const GAMECAT="videojuegos"; // los juegos van al expositor, no a la estantería
@@ -855,7 +856,8 @@ function shelfHTML(){
   const has=k=>state.items.some(i=>i.cat===k&&!i.pending);
   const cats=Object.keys(CATS).filter(k=>k!==GAMECAT&&albumList(k).length);
   if(!cats.length&&!has(GAMECAT)&&!state.items.some(isVarios))return `<div class="empty">${state.items.length?"Tus piezas están todas en «Por identificar».":"Aún no tienes piezas. Pulsa «+ Añadir» para empezar."}</div>`;
-  const frames=cats.map(k=>`<button type="button" class="wframe" data-album="${k}" aria-label="Ver de cerca el marco de ${esc(CATS[k])}"><span class="wf-head">${plateHTML(k)}</span>${frameHTML(k,false)}</button>`).join("");
+  const rows=Math.max(1,...cats.map(k=>Math.ceil(albumList(k).length/FRAME_COLS)));
+  const frames=cats.map(k=>`<button type="button" class="wframe" data-album="${k}" aria-label="Ver de cerca el marco de ${esc(CATS[k])}"><span class="wf-head">${plateHTML(k)}</span>${frameHTML(k,false,rows)}</button>`).join("");
   return `<div class="room"><div class="wall">${frames||'<div class="msg">Aquí irán tus marcos de cartas</div>'}</div>${rackHTML()}${cabHTML()}</div>
     <div class="msg ahint">Toca un marco para verlo de cerca, saca un juego del expositor o desliza el cristal de la vitrina</div>`}
 /* expositor de juegos: vitrina oscura con neón azul y las cajas de frente sobre baldas de luz */
