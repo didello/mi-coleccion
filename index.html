@@ -82,10 +82,11 @@
     <h3>Añadir producto a la colección</h3>
     <form id="addForm" class="form">
       <label class="full">Nombre<input id="fName" required placeholder="Ej. Charizard ex 199/165"></label>
-      <label>Categoría<select id="fCat"><option value="pokemon">Pokémon</option><option value="dragonball">Dragon Ball</option><option value="futbol">Fútbol</option><option value="arte">Arte / láminas</option><option value="videojuegos">Videojuegos</option><option value="vhs">VHS</option><option value="otro">Otro</option></select></label>
-      <label>Tipo<select id="fKind"><option>Graded</option><option>Sellado</option><option>Suelta</option><option>Lámina</option></select></label>
+      <label>Categoría<select id="fCat"><optgroup label="Cartas · álbumes"><option value="pokemon">Pokémon</option><option value="dragonball">Dragon Ball</option><option value="futbol">Fútbol</option></optgroup><optgroup label="Juegos · expositor"><option value="videojuegos">Videojuegos</option></optgroup><optgroup label="Varios · vitrina"><option value="otro">Varios (figuras, consolas, objetos…)</option><option value="arte">Láminas / arte</option><option value="vhs">VHS</option></optgroup></select></label>
+      <label>Tipo<select id="fKind"></select></label>
       <label>Set / colección<input id="fSet"></label>
-      <label>Nota de gradeo<input id="fGrade" placeholder="PSA 10"></label>
+      <label id="fGradeL">Nota de gradeo<input id="fGrade" placeholder="PSA 10"></label>
+      <div class="full msg" id="fWhere"></div>
       <label>Cantidad<input id="fQty" type="number" min="1" value="1"></label>
       <label>Pagado (unidad, $)<input id="fPaid" type="number" step="0.01" min="0"></label>
       <label class="full pullchk"><span><input type="checkbox" id="fPull"> Obtenida de sobres / caja</span><small>El coste será el <b class="pullpct">50%</b> del precio raw del día en que se registre.</small></label>

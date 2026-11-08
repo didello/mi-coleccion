@@ -521,13 +521,23 @@ $("mMine").addEventListener("click",()=>setMode("mine"));
 $("btnAdd").addEventListener("click",()=>{if(state.tab==="wish"){$("wName").focus();return}$("addPanel").hidden=!$("addPanel").hidden;if(!$("addPanel").hidden)$("fName").focus()});
 $("addCancel").addEventListener("click",()=>{$("addPanel").hidden=true});
 $("addForm").addEventListener("submit",e=>{e.preventDefault();$("addSave").click()});
+// Tipos que tienen sentido en cada categoría, y dónde irá la pieza (álbum, expositor o vitrina).
+const KINDS={card:[["Graded","Graded (gradeada)"],["Suelta","Suelta (sin gradear)"],["Sellado","Sellado (caja, ETB, sobres…)"]],
+  videojuegos:[["Sellado","Sellado (nuevo)"],["Suelta","Suelto"],["Graded","Graded"]],
+  otro:[["Suelta","Sin sellar"],["Sellado","Sellado"]],arte:[["Lámina","Lámina"]],vhs:[["Suelta","Sin sellar"],["Sellado","Sellado"]]};
+function addKinds(){const cat=$("fCat").value,prev=$("fKind").value,opts=KINDS[CARDCATS.has(cat)?"card":cat]||KINDS.otro;
+  $("fKind").innerHTML=opts.map(([v,l])=>`<option value="${v}"${v===prev?" selected":""}>${esc(l)}</option>`).join("");addWhere()}
+function addWhere(){const it={cat:$("fCat").value,kind:$("fKind").value},g=it.kind==="Graded";$("fGradeL").hidden=!g;if(!g)$("fGrade").value="";
+  const shelf=(CAB_TYPES.find(([k])=>k===cabType(it))||[])[1]||"";
+  $("fWhere").textContent=it.cat==="videojuegos"?"Irá al expositor de juegos.":isVarios(it)?`Irá a la vitrina de Varios, balda «${shelf}».`:`Irá al álbum de ${CATS[it.cat]}.`}
+$("fCat").addEventListener("change",addKinds);$("fKind").addEventListener("change",addWhere);
 $("addSave").addEventListener("click",async()=>{
   const name=$("fName").value.trim();if(!name){$("fName").focus();toast("Pon al menos el nombre");return}
   if(!db){toast("No se puede guardar desde esta vista");return}
   const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:v};const val=num("fVal"),today=new Date().toISOString().slice(0,10);
   const doc={name,cat:$("fCat").value,kind:$("fKind").value,set:$("fSet").value.trim(),grade:$("fGrade").value.trim(),qty:Math.max(1,parseInt($("fQty").value,10)||1),paid:num("fPaid"),value:val,source:"manual",sourceName:val==null?"Pendiente de buscar referencia":"Valor puesto a mano",ref:$("fRef").value.trim(),history:val==null?[]:[{d:today,v:val}],added:today,updated:today};
   if($("fPull").checked){doc.paidMode="pull";doc.paid=null}
-  try{await db.collection("items").add(doc);$("addForm").reset();$("fQty").value=1;$("addPanel").hidden=true;toast("Producto añadido")}catch(err){toast(err&&err.code==="quota_exceeded"?"La colección está llena.":"No se pudo guardar. Inténtalo otra vez.")}
+  try{await db.collection("items").add(doc);$("addForm").reset();$("fQty").value=1;addKinds();$("addPanel").hidden=true;toast("Producto añadido")}catch(err){toast(err&&err.code==="quota_exceeded"?"La colección está llena.":"No se pudo guardar. Inténtalo otra vez.")}
 });
 
 /* wishlist actions */
@@ -994,6 +1004,7 @@ let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout((
 
 function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();renderSalesCount();if(state.tab==="sales")renderSales();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
 setTab(state.tab);
+addKinds();
 
 /* arranque (con sesión iniciada) */
 const unsubs=[];
