@@ -861,22 +861,22 @@ function shelfHTML(){
   const frames=cats.map(k=>`<button type="button" class="wframe" data-album="${k}" aria-label="Ver de cerca el marco de ${esc(CATS[k])}"><span class="wf-head">${plateHTML(k)}</span>${frameHTML(k,false,rows)}</button>`).join("");
   return `<div class="room"><div class="wall">${frames||'<div class="msg">Aquí irán tus marcos de cartas</div>'}</div>${rackHTML()}${cabHTML()}</div>
     <div class="msg ahint">Toca un marco para verlo de cerca, saca un juego del expositor o desliza el cristal de la vitrina</div>`}
-/* expositor de juegos: estantería retro sobre ladrillo, letrero de neón azul por consola y el logo de PlayStation en neón arriba (símbolo en sus colores, letras en blanco).
+/* expositor de juegos: estantería retro sobre ladrillo y el logo de PlayStation en neón arriba (símbolo en sus colores, letras en blanco).
    Mide y se coloca como la vitrina de Varios: misma cornisa, mismas baldas (--row) y piezas a la misma altura (--ih), sobre el mismo suelo. */
 const platOf=it=>{const m=/\b(?:PS|PlayStation\s*)([1-5])\b|\b(PSP|PS\s?Vita|PSX|PSone)\b/i.exec([it.set,it.name,it.code].join(" "));
   if(!m)return"";if(m[1])return"PS"+m[1];const x=m[2].toUpperCase().replace(/\s/g,"");return x==="PSX"||x==="PSONE"?"PS1":x==="PSVITA"?"VITA":x};
 const PLATNAME={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PlayStation 3",PS4:"PlayStation 4",PS5:"PlayStation 5",PSP:"PSP",VITA:"PS Vita"};
 const PLATBAND={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PS3",PS4:"PS4",PS5:"PS5",PSP:"PSP",VITA:"PS Vita"}; // franja de arriba de la caja
-// Orden: de la consola más nueva a la más antigua; el primer juego de cada grupo lleva encima su letrero de neón.
+// Orden: de la consola más nueva a la más antigua.
 const RACK_GROUPS=[["PS5",["PS5"]],["PS4",["PS4"]],["PS3",["PS3"]],["PS2",["PS2"]],["Portátiles",["PSP","VITA"]],["Clásicos",["PS1"]]];
 function rackHTML(){
   const games=visible(GAMECAT),{n,v}=catTotals(games);
-  const box=(it,sign)=>{const p=platOf(it)||"PS1",q=it.qty||1;
-    return `<div class="gslot">${sign?`<span class="rk-neon">${sign}</span>`:""}<button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor">
+  const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1;
+    return `<div class="gslot"><button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor">
       <span class="g-side"></span><span class="g-band">${PLATBAND[p]}</span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>
       </button><span class="g-price" aria-hidden="true">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></div>`};
   const groups=RACK_GROUPS.map(([t,ps])=>{const g=games.filter(i=>ps.includes(platOf(i)||"PS1"));
-    return g.map((it,i)=>box(it,i?"":t)).join("")}).join("");
+    return g.map(box).join("")}).join("");
   return `<div class="rack">
     <div class="rk-top"><span class="rk-logo" role="img" aria-label="PlayStation">${psSVG(PS_SYM,"rk-sym")}${psSVG(PS_WORD,"rk-word")}</span>${n?`<span class="rk-sub">${n} juego${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
     <div class="rk-box"><div class="rk-body rk-row">${groups||`<div class="msg rk-empty">Aquí irán tus juegos</div>`}</div></div>
