@@ -158,7 +158,7 @@
   <!-- Evolución -->
   <section id="p-evo" role="tabpanel" aria-labelledby="tab-evo" hidden style="display:flex;flex-direction:column;gap:16px">
     <div class="toolbar" style="justify-content:space-between">
-      <div class="chips" id="evoChips" role="group" aria-label="Filtrar evolución por categoría"></div>
+      <div class="evochips"><div class="chips" id="evoChips" role="group" aria-label="Filtrar evolución por categoría"></div><div class="chips subchips" id="evoSubChips" role="group" aria-label="Subcategorías de Varios" hidden></div></div>
       <div class="seg" role="group" aria-label="Periodo"><button type="button" data-r="7" aria-pressed="false">7 días</button><button type="button" data-r="30" aria-pressed="true">30 días</button><button type="button" data-r="all" aria-pressed="false">Todo</button></div>
     </div>
     <div class="evo">
@@ -168,7 +168,7 @@
         <div class="legend"><span><span style="display:inline-block;width:18px;height:3px;background:var(--lime);vertical-align:middle;border-radius:2px"></span> Valor de mercado</span><span><span style="display:inline-block;width:18px;border-top:2px dashed var(--faint);vertical-align:middle"></span> Invertido</span><span id="evoNote"></span></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-        <div class="panel"><h3 style="font-size:16px">Reparto por categoría</h3><div class="bars" id="bars"></div></div>
+        <div class="panel"><h3 style="font-size:16px" id="barsTitle">Reparto por categoría</h3><div class="bars" id="bars"></div></div>
         <div class="panel"><h3 style="font-size:16px">Lo que más se ha movido</h3><div class="movers" id="movers"></div></div>
       </div>
     </div>

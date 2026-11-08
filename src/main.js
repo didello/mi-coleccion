@@ -5,7 +5,7 @@ const WCATS=CATS;
 const CATVAR={pokemon:"var(--c-pokemon)",dragonball:"var(--c-dragonball)",futbol:"var(--c-futbol)",arte:"var(--c-arte)",videojuegos:"var(--c-videojuegos)",vhs:"var(--c-vhs)",otro:"var(--c-otro)"};
 const SRC={guia:"Guía de precios",ebay:"Ventas eBay",manual:"Sin comparables",revisar:"Revisar versión"};
 const SRCS={guia:"Guía",ebay:"eBay",manual:"Sin comparables",revisar:"Revisar"};
-const state={items:[],sold:[],media:{},wish:[],meta:null,filter:"all",evoFilter:"all",range:"30",q:"",sort:"value",dir:"desc",tab:"col",modes:{},sel:null,dmode:null,flipped:false,confirmDel:null,wConfirm:null,moving:null,settings:null};
+const state={items:[],sold:[],media:{},wish:[],meta:null,filter:"all",evoFilter:"all",evoSub:"all",range:"30",q:"",sort:"value",dir:"desc",tab:"col",modes:{},sel:null,dmode:null,flipped:false,confirmDel:null,wConfirm:null,moving:null,settings:null};
 let db=null,assets=null,photos=null,photoFor=null,lastFocus=null;
 try{const g=k=>localStorage.getItem(k);state.sort=g("mc.sort")||"value";state.filter=g("mc.filter")||"all";state.dir=g("mc.dir")||(state.sort==="name"?"asc":"desc");try{const m=JSON.parse(g("mc.modes")||"{}");if(m&&typeof m==="object")state.modes=m}catch(_){}state.tab=g("mc.tab")||"col";state.range=g("mc.range")||"30"}catch(e){}
 const h0=(location.hash||"").slice(1);if(h0==="deseos")state.tab="wish";else if(h0==="evolucion")state.tab="evo";else if(h0==="coleccion")state.tab="col";else if(h0==="topps")state.tab="topps";else if(h0==="ventas")state.tab="sales";
@@ -114,9 +114,24 @@ function renderChips(){
   const mk=(list,sel,attr)=>list.map(([k,l])=>`<button type="button" class="chip${k==="pending"?" pendchip":""}" ${attr}="${k}" aria-pressed="${sel===k}">${dot(k)}${l}<span class="c">${counts[k]||0}</span></button>`).join("");
   // A las categorías se entra desde la estantería y el expositor: aquí solo queda «Por identificar», si hay piezas así.
   $("chips").innerHTML=counts.pending?mk([["all","Todo"],["pending","Por identificar"]],state.filter,"data-f"):"";$("chips").hidden=!counts.pending;
-  if(state.evoFilter!=="all"&&(state.evoFilter==="pending"||!counts[state.evoFilter]))state.evoFilter="all";
-  $("evoChips").innerHTML=mk([["all","Todo"],...cats],state.evoFilter,"data-ef");
+  // Evolución: como los muebles (álbumes por categoría, expositor de juegos y vitrina de Varios con sus baldas).
+  const ec={all:state.items.length},sc={all:0};for(const it of state.items){if(it.pending)continue;const k=evoKey(it);ec[k]=(ec[k]||0)+1;if(k==="varios"){sc.all++;sc[cabType(it)]=(sc[cabType(it)]||0)+1}}
+  const groups=[...Object.keys(CATS).filter(k=>k!=="videojuegos"&&ec[k]).map(k=>[k,CATS[k]]),...(ec.videojuegos?[["videojuegos",CATS.videojuegos]]:[]),...(ec.varios?[["varios","Varios"]]:[])];
+  if(state.evoFilter!=="all"&&!ec[state.evoFilter])state.evoFilter="all";
+  if(state.evoSub!=="all"&&!sc[state.evoSub])state.evoSub="all";
+  const chip=(k,l,n,sel,attr,col)=>`<button type="button" class="chip" ${attr}="${k}" aria-pressed="${sel===k}">${col?`<span class="d" style="background:${col}"></span>`:""}${l}<span class="c">${n||0}</span></button>`;
+  $("evoChips").innerHTML=[["all","Todo"],...groups].map(([k,l])=>chip(k,l,ec[k],state.evoFilter,"data-ef",k==="all"?"":evoColor(k))).join("");
+  const showSub=state.evoFilter==="varios";$("evoSubChips").hidden=!showSub;
+  $("evoSubChips").innerHTML=showSub?[["all","Todo Varios"],...CAB_TYPES.filter(([k])=>sc[k])].map(([k,l])=>chip(k,l,sc[k],state.evoSub,"data-es",k==="all"?"":evoColor("varios",k))).join(""):"";
 }
+// Grupo de Evolución de cada pieza: su categoría de cartas, videojuegos o «varios» (lo que va a la vitrina).
+const evoKey=it=>isVarios(it)?"varios":it.cat;
+const VARIOS_COL={all:"#c9a46a",sellado:"#c9a46a",arte:"var(--c-arte)",vhs:"var(--c-vhs)",otro:"var(--c-otro)"};
+const evoColor=(k,sub="all")=>k==="varios"?VARIOS_COL[sub]||VARIOS_COL.all:CATVAR[k]||"var(--c-otro)";
+function evoItems(){const f=state.evoFilter,s=state.evoSub;
+  if(f==="all")return state.items;
+  if(f==="varios")return state.items.filter(i=>!i.pending&&isVarios(i)&&(s==="all"||cabType(i)===s));
+  return state.items.filter(i=>!i.pending&&evoKey(i)===f)}
 const RELIAB={guia:3,ebay:2,manual:1,revisar:0};
 function sortKey(it){const s=state.sort,q=it.qty||1;
   switch(s){case"value":return it.value!=null?it.value*q:null;case"plpct":return it.paid&&it.value!=null?it.value/it.paid-1:null;case"pl":return plOf(it);case"week":return weekChange(it);case"paid":return it.paid!=null?it.paid*q:null;case"reliab":return RELIAB[it.source]??0;default:return(it.name||"").toLowerCase()}}
@@ -168,10 +183,10 @@ function renderWish(){
 
 /* evolution */
 function renderEvo(){
-  const items=state.items.filter(i=>state.evoFilter==="all"||i.cat===state.evoFilter);
+  const items=evoItems();
   const cut=state.range==="all"?"":daysAgo(+state.range);
   const all=seriesFor(items);const pts=all.filter(p=>p.d>cut);
-  const col=state.evoFilter==="all"?"var(--lime)":CATVAR[state.evoFilter];
+  const col=state.evoFilter==="all"?"var(--lime)":evoColor(state.evoFilter,state.evoSub);
   $("evoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:240,w:cw("evoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"ge"}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
   const last=pts[pts.length-1],first=pts[0];
   $("evoVal").textContent=last?fmt0(last.value):"—";
@@ -179,8 +194,11 @@ function renderEvo(){
   $("evoNote").textContent=all.length?`Historial desde el ${dateES(all[0].d)} (${all.length} revisión${all.length>1?"es":""})`:"";
   document.querySelectorAll("[data-r]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.r===state.range));
   // category bars (always full collection)
-  const byCat={};let tot=0;for(const it of state.items){if(it.value==null)continue;const v=it.value*(it.qty||1);byCat[it.cat]=(byCat[it.cat]||0)+v;tot+=v}
-  $("bars").innerHTML=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><div class="l"><span>${CATS[k]||k}</span><span class="mono">${fmt0(v)} · ${Math.round(v/tot*100)}%</span></div><div class="t"><i style="width:${(v/tot*100).toFixed(1)}%;background:${CATVAR[k]||"var(--muted)"}"></i></div></div>`).join("")||`<div class="msg">Sin valores todavía.</div>`;
+  const inV=state.evoFilter==="varios",byCat={};let tot=0;
+  for(const it of state.items){if(it.value==null||(inV&&!isVarios(it)))continue;const v=it.value*(it.qty||1),k=inV?cabType(it):evoKey(it);byCat[k]=(byCat[k]||0)+v;tot+=v}
+  $("barsTitle").textContent=inV?"Reparto de Varios":"Reparto por categoría";
+  const barName=k=>inV?(CAB_TYPES.find(([t])=>t===k)||[,k])[1]:k==="varios"?"Varios":CATS[k]||k,barCol=k=>inV?evoColor("varios",k):evoColor(k);
+  $("bars").innerHTML=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="bar"><div class="l"><span>${barName(k)}</span><span class="mono">${fmt0(v)} · ${Math.round(v/tot*100)}%</span></div><div class="t"><i style="width:${(v/tot*100).toFixed(1)}%;background:${barCol(k)}"></i></div></div>`).join("")||`<div class="msg">Sin valores todavía.</div>`;
   const mv=items.map(it=>({it,r:trendOf(it,state.range)})).filter(x=>x.r!=null&&Math.abs(x.r)>=.0005).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,6);
   $("movers").innerHTML=mv.length?mv.map(({it,r})=>`<button type="button" class="mover" data-id="${esc(it.id)}">${pick(it,modeFor(it.cat))?srcHTML(pick(it,modeFor(it.cat)).src,""," loading=\"lazy\""):phHTML(it)}<div style="min-width:0"><div class="nm">${esc(it.name)}</div><div class="sb">${esc(it.grade||it.kind||"")} · ${fmt(it.value)}</div></div>${pillHTML(r)}</button>`).join(""):`<div class="msg">Ningún precio ha cambiado en este periodo.</div>`;
 }
@@ -508,7 +526,8 @@ $("chips").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(
     if(k==="all"&&CATS[state.filter]){closeAlbum();return}
     if(CATS[k]){openAlbum(k,state.filter==="all"?document.querySelector(`.shelfbook[data-album="${k}"]`):null);return}}
   state.filter=k;savePref("mc.filter",state.filter);renderChips();renderGrid();renderSummary()});
-$("evoChips").addEventListener("click",e=>{const b=e.target.closest("[data-ef]");if(!b)return;state.evoFilter=b.dataset.ef;renderChips();renderEvo()});
+$("evoChips").addEventListener("click",e=>{const b=e.target.closest("[data-ef]");if(!b)return;state.evoFilter=b.dataset.ef;state.evoSub="all";renderChips();renderEvo()});
+$("evoSubChips").addEventListener("click",e=>{const b=e.target.closest("[data-es]");if(!b)return;state.evoSub=b.dataset.es;renderChips();renderEvo()});
 document.querySelectorAll("[data-r]").forEach(b=>b.addEventListener("click",()=>{state.range=b.dataset.r;savePref("mc.range",state.range);renderEvo()}));
 $("q").addEventListener("input",e=>{state.q=e.target.value;renderGrid()});
 $("sort").addEventListener("change",e=>{state.sort=e.target.value;state.dir=state.sort==="name"?"asc":"desc";savePref("mc.sort",state.sort);savePref("mc.dir",state.dir);renderGrid()});

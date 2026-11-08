@@ -616,3 +616,7 @@ img{max-width:100%}
 .cab-legs i{display:block;width:14px;height:14px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,#1b110a,#3a2516,#1b110a)}
 @media (max-width:520px){.cab-row{--ih:62px;column-gap:12px}.ci-pic img{max-width:150px}.ci-pic .ph{font-size:8.5px;padding:5px}.cab-plate{font-size:21px;letter-spacing:.2em;padding-left:.2em}.cab-sub{font-size:11px}.cab-box{padding:24px 12px 10px;border-width:9px}.cab-body{--row:108px}.cslot{padding:24px 2px 12px}.cab-top{margin:0 -6px}}
 @media (prefers-reduced-motion:reduce){.cab-door,.citem,.ci-tag{transition:none}}
+/* Evolución: subcategorías de Varios bajo sus categorías */
+.evochips{display:flex;flex-direction:column;gap:8px;min-width:0}
+.subchips{padding-left:12px;border-left:2px solid #c9a46a}
+.subchips .chip{font-size:12.5px}
