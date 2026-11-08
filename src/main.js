@@ -845,7 +845,10 @@ function slabHTML(it,big){const q=it.qty||1,g=isGraded(it)?gradeParts(it.grade):
   const extra=(q>1?`<span class="sl-q">×${q}</span>`:"")+(big?`<span class="sl-tag">${val}</span>`:"");
   if(g)return `<${tag} class="slab" ${attrs} style="--gc:${GRADER_COL[g.grader]||GRADER_COL.PSA}"><span class="sl-lab"><span class="sl-n">${esc(it.name)}</span><span class="sl-g"><small>${esc(g.grader)}</small>${esc(g.num||"")}</span></span><span class="sl-pic">${imgHTML(it,modeFor(it.cat),big)}</span>${extra}</${tag}>`;
   return `<${tag} class="tl" ${attrs}><span class="sl-pic">${imgHTML(it,modeFor(it.cat),big)}</span>${extra}</${tag}>`}
-function frameHTML(cat,big){const l=albumList(cat);return `<div class="frm" style="--cols:${Math.min(5,Math.max(2,l.length))}"><div class="frm-in">${l.map(it=>slabHTML(it,big)).join("")}</div></div>`}
+// Todos los marcos con las mismas columnas; los huecos de la última fila se ven vacíos.
+const FRAME_COLS=5;
+function frameHTML(cat,big){const l=albumList(cat),gaps=(FRAME_COLS-l.length%FRAME_COLS)%FRAME_COLS||(l.length?0:FRAME_COLS);
+  return `<div class="frm" style="--cols:${FRAME_COLS}"><div class="frm-in">${l.map(it=>slabHTML(it,big)).join("")}${"<span class=\"sl-empty\" aria-hidden=\"true\"></span>".repeat(gaps)}</div></div>`}
 function plateHTML(cat){const{n,v}=catTotals(albumList(cat));return `<span class="cab-plate">${esc(CATS[cat])}</span><span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`}
 const GAMECAT="videojuegos"; // los juegos van al expositor, no a la estantería
 function shelfHTML(){

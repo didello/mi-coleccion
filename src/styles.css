@@ -567,13 +567,13 @@ img{max-width:100%}
 /* pared de marcos para slabs (negro lacado, doble filete dorado y foco cálido) */
 .room{grid-template-columns:minmax(260px,.8fr) minmax(0,1.5fr)}
 .room .cab{grid-column:auto;margin-top:0;align-self:end}
-.wall{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:28px 38px;padding:6px 0 10px}
+.wall{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:28px 30px;padding:6px 0 10px}
 .wframe{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0;border:0;border-radius:0;background:none;cursor:pointer;font-weight:400;transition:transform .3s cubic-bezier(.2,.7,.2,1)}
 .wframe:hover,.wframe:focus-visible{border:0;outline:none;transform:translateY(-4px)}
 .wframe:focus-visible .frm{outline:2px solid var(--lime);outline-offset:4px}
 .wf-head,.fv-plate{display:flex;flex-direction:column;align-items:center;gap:3px}
 .wf-head .cab-plate{font-size:20px}
-.frm{--sw:54px;padding:18px;background:linear-gradient(180deg,#1a1a1c,#08080a);
+.frm{--sw:46px;padding:18px;background:linear-gradient(180deg,#1a1a1c,#08080a);
   box-shadow:inset 0 0 0 1px #e2c07a,inset 0 0 0 3px #0b0b0d,inset 0 0 0 4px #c9a45c,inset 0 0 0 9px #0b0b0d,inset 0 0 0 10px rgba(201,164,92,.55),0 20px 34px rgba(0,0,0,.65)}
 .frm-in{display:grid;grid-template-columns:repeat(var(--cols),var(--sw));gap:calc(var(--sw)*.24) calc(var(--sw)*.2);align-items:end;padding:calc(var(--sw)*.36) calc(var(--sw)*.3);
   background:radial-gradient(70% 55% at 50% 0%,rgba(255,214,150,.22),transparent 75%),radial-gradient(120% 90% at 50% 0%,#1c1a1f,#0a090c);box-shadow:inset 0 3px 14px rgba(0,0,0,.9)}
@@ -589,9 +589,10 @@ img{max-width:100%}
 .sl-g{display:flex;flex-direction:column;align-items:flex-end;flex:0 0 auto;font-family:var(--mono);font-weight:700;font-size:calc(var(--sw)*.16);line-height:.95;color:#111}
 .sl-g small{font-size:calc(var(--sw)*.065);font-weight:700;color:var(--gc)}
 .slab .sl-pic{display:block;height:76%;margin-top:5%;border-radius:2px;overflow:hidden}
-.tl{aspect-ratio:62/86;padding:calc(var(--sw)*.07);border-radius:calc(var(--sw)*.05);background:linear-gradient(160deg,rgba(255,255,255,.35),rgba(255,255,255,.08) 45%,rgba(255,255,255,.28));
+.tl{aspect-ratio:62/104;display:flex;flex-direction:column;justify-content:flex-end;padding:calc(var(--sw)*.07) calc(var(--sw)*.07) calc(var(--sw)*.09);border-radius:calc(var(--sw)*.05);background:linear-gradient(160deg,rgba(255,255,255,.35),rgba(255,255,255,.08) 45%,rgba(255,255,255,.28));
   box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.75),inset 0 calc(var(--sw)*.1) 0 calc(var(--sw)*-.05) rgba(255,255,255,.5),0 4px 8px rgba(0,0,0,.45)}
-.tl .sl-pic{display:block;height:100%;border-radius:3px;overflow:hidden}
+.tl .sl-pic{display:block;width:100%;aspect-ratio:63/88;height:auto;border-radius:3px;overflow:hidden}
+.sl-empty{width:var(--sw);aspect-ratio:62/104;border-radius:calc(var(--sw)*.08);border:1px dashed rgba(201,164,92,.22)}
 .sl-pic img,.sl-pic .ph,.sl-pic .spr,.sl-pic .sprw{display:block;width:100%;height:100%;object-fit:cover}
 .sl-pic .ph{font-size:calc(var(--sw)*.09);padding:4px}
 .sl-q{position:absolute;right:-5px;bottom:-5px;padding:0 5px;border-radius:99px;background:#c9a45c;color:#1b1206;font-family:var(--mono);font-size:10px;font-weight:700}
@@ -601,5 +602,5 @@ button.slab:hover,button.tl:hover,button.slab:focus-visible,button.tl:focus-visi
 button.slab:hover .sl-tag,button.tl:hover .sl-tag,button.slab:focus-visible .sl-tag,button.tl:focus-visible .sl-tag{opacity:1;transform:translate(-50%,0)}
 .slab.out,.tl.out{transform:translateY(-30px) scale(1.25)!important;opacity:0;transition:transform .38s cubic-bezier(.4,0,.6,1),opacity .3s .08s}
 @media (max-width:760px){.room{grid-template-columns:minmax(0,1fr)}.wall{gap:22px 26px}}
-@media (max-width:520px){.frm{--sw:34px;padding:13px}.wf-head .cab-plate{font-size:17px}.fview .frm{--sw:56px;padding:16px}.fview .calhead{grid-template-columns:auto 1fr}.fview .calhead>span:last-child{display:none}}
+@media (max-width:520px){.frm{--sw:34px;padding:13px}.wf-head .cab-plate{font-size:17px}.fview .frm{--sw:46px;padding:14px}.fview .calhead{grid-template-columns:auto 1fr}.fview .calhead>span:last-child{display:none}}
 @media (prefers-reduced-motion:reduce){.wframe,button.slab,button.tl{transition:none}}
