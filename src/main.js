@@ -861,7 +861,7 @@ function shelfHTML(){
   const frames=cats.map(k=>`<button type="button" class="wframe" data-album="${k}" aria-label="Ver de cerca el marco de ${esc(CATS[k])}"><span class="wf-head">${plateHTML(k)}</span>${frameHTML(k,false,rows)}</button>`).join("");
   return `<div class="room"><div class="wall">${frames||'<div class="msg">Aquí irán tus marcos de cartas</div>'}</div>${rackHTML()}${cabHTML()}</div>
     <div class="msg ahint">Toca un marco para verlo de cerca, saca un juego del expositor o desliza el cristal de la vitrina</div>`}
-/* expositor de juegos: estantería retro sobre ladrillo y el logo de PlayStation en neón arriba (símbolo en sus colores, letras en blanco).
+/* expositor de juegos: mueble negro mate con baldas iluminadas y el logo de PlayStation en neón arriba (símbolo en sus colores, letras en blanco).
    Mide y se coloca como la vitrina de Varios: misma cornisa, mismas baldas (--row) y piezas a la misma altura (--ih), sobre el mismo suelo. */
 const platOf=it=>{const m=/\b(?:PS|PlayStation\s*)([1-5])\b|\b(PSP|PS\s?Vita|PSX|PSone)\b/i.exec([it.set,it.name,it.code].join(" "));
   if(!m)return"";if(m[1])return"PS"+m[1];const x=m[2].toUpperCase().replace(/\s/g,"");return x==="PSX"||x==="PSONE"?"PS1":x==="PSVITA"?"VITA":x};
