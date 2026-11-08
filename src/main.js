@@ -45,22 +45,45 @@ function seriesFor(items){
     for(const it of items){const h=hist(it).filter(p=>p.d<=d);if(!h.length)continue;const q=it.qty||1;value+=h[h.length-1].v*q;if(it.paid!=null)invested+=it.paid*q}
     return{d,value:+value.toFixed(2),invested:+invested.toFixed(2)}});
 }
-function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,secondColor=null,id="g",w=600}={}){
+// Paso «redondo» para el eje: 1, 2, 2,5 o 5 × potencia de 10, para que salgan unas n marcas.
+function niceStep(range,n){const raw=range/Math.max(1,n),mag=Math.pow(10,Math.floor(Math.log10(raw)));for(const m of [1,2,2.5,5,10])if(raw<=m*mag)return m*mag;return 10*mag}
+function lineSVG(points,{h=150,pad=[10,10,22,50],labels=true,color="var(--lime)",second=null,secondColor=null,id="g",w=600,ticks=3,box=null}={}){
   if(!points.length)return"";const[pt,pr,pb,pl]=labels?pad:[6,6,6,6];
   const all=points.map(p=>p.v).concat(second?second.map(p=>p.v):[]);
   let lo=Math.min(...all),hi=Math.max(...all);if(lo===hi){lo=lo*0.9;hi=hi*1.1||1}
   const span=hi-lo;lo=lo>=0?Math.max(0,lo-span*.1):lo-span*.1;hi+=span*.1;
+  let marks=null;if(ticks>3){const st=niceStep(hi-lo,ticks-1);lo=Math.floor(lo/st)*st;hi=Math.ceil(hi/st)*st;marks=[];for(let v=lo;v<=hi+st/2;v+=st)marks.push(+v.toFixed(6))}
   const x=i=>points.length===1?pl+(w-pl-pr)/2:pl+i*(w-pl-pr)/(points.length-1);
   const y=v=>pt+(hi-v)*(h-pt-pb)/(hi-lo);
   let g=`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:${color};stop-opacity:.35"/><stop offset="1" style="stop-color:${color};stop-opacity:0"/></linearGradient></defs>`;
-  if(labels){for(let k=0;k<=2;k++){const v=lo+(hi-lo)*k/2;const yy=y(v).toFixed(1);g+=`<line x1="${pl}" x2="${w-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line);stroke-width:1"/><text x="${pl-8}" y="${+yy+4}" text-anchor="end" font-size="11" style="fill:var(--faint);font-family:var(--mono)">${fmt0(v)}</text>`}
+  if(labels){for(const v of marks||[lo,(lo+hi)/2,hi]){const yy=y(v).toFixed(1);g+=`<line x1="${pl}" x2="${w-pr}" y1="${yy}" y2="${yy}" style="stroke:var(--line);stroke-width:1"/><text x="${pl-8}" y="${+yy+4}" text-anchor="end" font-size="11" style="fill:var(--faint);font-family:var(--mono)">${fmt0(v)}</text>`}
     const idx=points.length>1?[0,points.length-1]:[0];for(const i of idx)g+=`<text x="${x(i)}" y="${h-4}" text-anchor="${points.length===1?"middle":i?"end":"start"}" font-size="11" style="fill:var(--faint)">${esc(dateShort(points[i].d))}</text>`}
   const path=ps=>ps.map((p,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(p.v).toFixed(1)).join("");
   if(second&&second.length>1)g+=`<path d="${path(second)}" style="${secondColor?`fill:none;stroke:${secondColor};stroke-width:2.5;stroke-linejoin:round`:"fill:none;stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4"}"/>`;
   if(points.length>1)g+=`<path d="${path(points)}L${x(points.length-1)},${h-pb}L${x(0)},${h-pb}Z" style="fill:url(#${id})"/><path d="${path(points)}" style="fill:none;stroke:${color};stroke-width:2.5;stroke-linejoin:round"/>`;
   const li=points.length-1;g+=`<circle cx="${x(li)}" cy="${y(points[li].v)}" r="5" style="fill:${color};stroke:var(--bg);stroke-width:2"/>`;
+  if(box)box._chart={points,second,x,y,w,h,color,secondColor:secondColor||"var(--faint)"}; // para el detalle al pasar el cursor
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="Gráfica de evolución del valor">${g}</svg>`;
 }
+// Al pasar el cursor (o el dedo) por la gráfica: línea vertical en el día más cercano, puntos en las dos líneas y sus importes exactos.
+function chartHover(box,names=["Valor de mercado","Invertido"]){
+  if(box._hover)return;box._hover=true;box.classList.add("chhover");
+  const tip=document.createElement("div"),guide=document.createElement("div"),d1=document.createElement("i"),d2=document.createElement("i");
+  tip.className="chtip";guide.className="chguide";d1.className="chdot";d2.className="chdot";
+  const hide=()=>{for(const el of [tip,guide,d1,d2])el.hidden=true};hide();box.append(guide,d1,d2,tip);
+  box.addEventListener("pointerleave",hide);
+  box.addEventListener("pointermove",e=>{const c=box._chart,svg=box.querySelector("svg");if(!c||!svg||c.points.length<1){hide();return}
+    if(!tip.isConnected)box.append(guide,d1,d2,tip); // la gráfica se redibuja con innerHTML
+    const r=svg.getBoundingClientRect(),br=box.getBoundingClientRect(),sx=r.width/c.w,sy=r.height/c.h,mx=(e.clientX-r.left)/sx;
+    let i=0,best=Infinity;c.points.forEach((p,k)=>{const dd=Math.abs(c.x(k)-mx);if(dd<best){best=dd;i=k}});
+    const p=c.points[i],q=c.second&&c.second[i],px=r.left-br.left+c.x(i)*sx,top=r.top-br.top;
+    guide.style.cssText=`left:${px}px;top:${top}px;height:${r.height}px`;
+    d1.style.cssText=`left:${px}px;top:${top+c.y(p.v)*sy}px;background:${c.color}`;
+    if(q){d2.style.cssText=`left:${px}px;top:${top+c.y(q.v)*sy}px;background:${c.secondColor}`;d2.hidden=false}else d2.hidden=true;
+    const diff=q?p.v-q.v:null;
+    tip.innerHTML=`<b>${esc(dateES(p.d))}</b><span><i style="background:${c.color}"></i>${names[0]} <em>${fmt(p.v)}</em></span>${q?`<span><i style="background:${c.secondColor}"></i>${names[1]} <em>${fmt(q.v)}</em></span><span class="${diff>=0?"pos":"neg"}">${diff>=0?"+":"−"}${fmt(Math.abs(diff))}${q.v?" · "+pct(diff/q.v):""}</span>`:""}`;
+    guide.hidden=d1.hidden=tip.hidden=false;
+    const tw=tip.offsetWidth,left=px+14+tw>br.width?px-14-tw:px+14;tip.style.left=Math.max(0,left)+"px";tip.style.top=Math.max(0,top+Math.min(c.y(p.v),q?c.y(q.v):c.y(p.v))*sy-10)+"px"})}
 
 const cw=id=>{const w=$(id).clientWidth;return w>200?Math.round(w):600};
 let rzT;window.addEventListener("resize",()=>{clearTimeout(rzT);rzT=setTimeout(()=>{renderSummary();if(state.tab==="evo")renderEvo()},200)});
@@ -187,7 +210,7 @@ function renderEvo(){
   const cut=state.range==="all"?"":daysAgo(+state.range);
   const all=seriesFor(items);const pts=all.filter(p=>p.d>cut);
   const col=state.evoFilter==="all"?"var(--lime)":evoColor(state.evoFilter,state.evoSub);
-  $("evoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:240,w:cw("evoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"ge"}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
+  $("evoChart").innerHTML=pts.length?lineSVG(pts.map(p=>({d:p.d,v:p.value})),{h:240,w:cw("evoChart"),color:col,second:pts.map(p=>({d:p.d,v:p.invested})),id:"ge",ticks:7,pad:[12,10,22,62],box:$("evoChart")}):`<div class="empty">Aún no hay precios en este periodo.</div>`;
   const last=pts[pts.length-1],first=pts[0];
   $("evoVal").textContent=last?fmt0(last.value):"—";
   if(pts.length>1){const d=last.value-first.value;const e=$("evoChg");e.textContent=(d>=0?"+":"−")+fmt0(Math.abs(d))+" · "+pct(first.value?d/first.value:0);e.className="v "+(d>=0?"pos":"neg")}else{$("evoChg").textContent="—";$("evoChg").className="v"}
@@ -1024,6 +1047,7 @@ let cRz;window.addEventListener("resize",()=>{clearTimeout(cRz);cRz=setTimeout((
 function renderAll(){renderChips();renderSummary();renderGrid();if(state.tab==="evo")renderEvo();if(state.tab==="wish")renderWish();if(state.tab==="topps")renderTopps();renderSalesCount();if(state.tab==="sales")renderSales();tpCount();if(state.sel){renderInfo(false)}if(state.tsel&&TP.cat){const a=document.activeElement;if(!(a&&$("info").contains(a)&&a.tagName==="INPUT"&&a.type!=="checkbox"))renderToppsDetail(false)}}
 setTab(state.tab);
 addKinds();
+chartHover($("evoChart"));
 
 /* arranque (con sesión iniciada) */
 const unsubs=[];
