@@ -569,24 +569,17 @@ img{max-width:100%}
 @media (max-width:520px){.tabs{gap:1px;padding:3px}.tabs button{padding:8px 6px;font-size:12.5px}.tabs .cnt{font-size:10px;margin-left:3px}}
 /* vitrina de «Varios»: aparador de madera con puertas correderas de cristal */
 .cab{grid-column:1/-1;position:relative;margin-top:14px;padding:0 10px}
-.cab-top{position:relative;z-index:4;display:flex;justify-content:center;align-items:center;height:34px;margin:0 -10px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#9a6a42,var(--wood) 45%,var(--wood-lo));box-shadow:0 6px 10px -4px rgba(0,0,0,.6)}
-/* placa y etiquetas de acero cepillado con letras grabadas */
-.cab-plate,.cab-lbl{--steel:repeating-linear-gradient(90deg,rgba(255,255,255,.09) 0 1px,rgba(0,0,0,.06) 1px 2px,transparent 2px 4px),linear-gradient(180deg,#f7f8fa 0%,#cfd3d9 34%,#9ea5ae 50%,#c9ced4 66%,#eef0f3 84%,#8f959e 100%);
-  background:var(--steel);color:#262b31;text-shadow:0 1px 0 rgba(255,255,255,.7);white-space:nowrap}
-.cab-plate{position:relative;display:inline-flex;align-items:center;gap:12px;padding:5px 30px;border-radius:2px;font-family:var(--mono);font-size:12px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(0,0,0,.3),0 0 0 1px #4f555d,0 0 0 2px rgba(255,255,255,.12),0 4px 8px rgba(0,0,0,.65)}
-.cab-plate::before,.cab-plate::after{content:"";position:absolute;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#fff,#b5bbc3 45%,#5d636b);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.45)}
-.cab-plate::before{left:10px}.cab-plate::after{right:10px}
-.cab-plate b{font-family:var(--display);font-weight:800;font-size:13.5px;letter-spacing:.24em;text-transform:uppercase;color:#1c2025}
-.cab-plate span{padding-left:12px;border-left:1px solid rgba(0,0,0,.28);box-shadow:-1px 0 0 rgba(255,255,255,.55);letter-spacing:.04em}
+.cab-top{position:relative;z-index:4;display:flex;flex-direction:column;gap:3px;justify-content:center;align-items:center;height:62px;margin:0 -10px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#9a6a42,var(--wood) 45%,var(--wood-lo));box-shadow:0 6px 10px -4px rgba(0,0,0,.6)}
+/* rótulo: letras sueltas de acero pulido sobre la madera */
+.cab-plate,.cab-lbl b{display:inline-block;text-transform:uppercase;background:linear-gradient(180deg,#ffffff 0%,#e4e8ec 34%,#9aa1aa 50%,#eef1f4 68%,#b4bac2 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cab-plate{font-family:"Marcellus SC",serif;font-size:25px;line-height:1;letter-spacing:.26em;padding-left:.26em;white-space:nowrap;filter:drop-shadow(0 1px 0 rgba(0,0,0,.7)) drop-shadow(2px 3px 2px rgba(0,0,0,.55))}
+.cab-sub{font-family:"Marcellus SC",serif;font-size:12px;letter-spacing:.08em;color:#e3c9a6;opacity:.9;white-space:nowrap}
 .cab-box{position:relative;overflow:hidden;padding:28px 22px 12px;border-left:12px solid var(--wood);border-right:12px solid var(--wood);
   background:radial-gradient(90% 60% at 50% 0%,rgba(255,206,140,.2),transparent 70%),repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0 2px,transparent 2px 9px),linear-gradient(180deg,#2a1b11,#150d08)}
 .cab-led{position:absolute;left:3%;right:3%;top:0;height:4px;border-radius:0 0 4px 4px;background:#ffe6bd;box-shadow:0 0 16px 4px rgba(255,204,128,.55),0 0 70px 14px rgba(255,190,110,.16)}
 .cab-body{--row:186px;display:flex;flex-direction:column;min-height:var(--row)}
 .cab-group{position:relative}
-.cab-lbl{position:absolute;left:0;top:6px;z-index:1;padding:2px 9px;border-radius:2px;font-family:var(--display);font-weight:800;font-size:9px;letter-spacing:.2em;text-transform:uppercase;pointer-events:none;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.25),0 0 0 1px #4f555d,0 2px 5px rgba(0,0,0,.6)}
+.cab-lbl{position:absolute;left:2px;top:6px;z-index:1;font-family:"Marcellus SC",serif;font-size:11px;letter-spacing:.26em;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.85))}
 .cab-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(122px,1fr));grid-auto-rows:var(--row);column-gap:14px;margin:0 -10px;padding:0 10px;
   background:repeating-linear-gradient(180deg,transparent 0 calc(var(--row) - 10px),rgba(240,250,255,.6) calc(var(--row) - 10px) calc(var(--row) - 9px),rgba(195,230,250,.2) calc(var(--row) - 9px) var(--row))}
 .cab-empty{align-self:center;margin:auto 0;text-align:center;color:#d9b98f}
@@ -618,5 +611,5 @@ img{max-width:100%}
 .cab-base{height:16px;margin:0 -4px;border-radius:0 0 3px 3px;background:linear-gradient(180deg,var(--wood-lo),var(--wood) 30%,#3a2414);box-shadow:inset 0 3px 0 rgba(0,0,0,.4)}
 .cab-legs{display:flex;justify-content:space-between;padding:0 5%}
 .cab-legs i{display:block;width:14px;height:14px;border-radius:0 0 3px 3px;background:linear-gradient(90deg,#1b110a,#3a2516,#1b110a)}
-@media (max-width:520px){.cab-plate{padding:4px 22px;gap:8px;font-size:10.5px}.cab-plate b{font-size:11.5px;letter-spacing:.18em}.cab-plate::before{left:7px}.cab-plate::after{right:7px}.cab-box{padding:24px 12px 10px;border-width:9px}.cab-body{--row:140px}.cab-row{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px}.cslot{padding:24px 2px 12px}.cab-top{margin:0 -6px}}
+@media (max-width:520px){.cab-plate{font-size:21px;letter-spacing:.2em;padding-left:.2em}.cab-sub{font-size:11px}.cab-box{padding:24px 12px 10px;border-width:9px}.cab-body{--row:140px}.cab-row{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:8px}.cslot{padding:24px 2px 12px}.cab-top{margin:0 -6px}}
 @media (prefers-reduced-motion:reduce){.cab-door,.citem,.ci-tag{transition:none}}

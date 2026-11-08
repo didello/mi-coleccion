@@ -839,9 +839,9 @@ function cabHTML(){
   const item=it=>{const q=it.qty||1;return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
     <span class="ci-pic">${imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
   return `<div class="cab" data-open="${CAB.open||""}">
-    <div class="cab-top"><span class="cab-plate"><b>Varios</b>${n?`<span>${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</span></div>
+    <div class="cab-top"><span class="cab-plate">Varios</span>${n?`<span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
     <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>
-      <div class="cab-body">${l.length?CAB_TYPES.map(([k,t])=>{const g=l.filter(i=>cabType(i)===k);return g.length?`<section class="cab-group" aria-label="${t}"><span class="cab-lbl">${t}</span><div class="cab-row">${g.map(item).join("")}</div></section>`:""}).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
+      <div class="cab-body">${l.length?CAB_TYPES.map(([k,t])=>{const g=l.filter(i=>cabType(i)===k);return g.length?`<section class="cab-group" aria-label="${t}"><span class="cab-lbl"><b>${t}</b></span><div class="cab-row">${g.map(item).join("")}</div></section>`:""}).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
       <button type="button" class="cab-door l" data-door="L" aria-label="Deslizar la puerta izquierda"><span class="cab-pull"></span></button>
       <button type="button" class="cab-door r" data-door="R" aria-label="Deslizar la puerta derecha"><span class="cab-pull"></span></button></div>
     <div class="cab-base"></div><div class="cab-legs" aria-hidden="true"><i></i><i></i></div></div>`}
