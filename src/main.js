@@ -1,4 +1,5 @@
 import { catalogUrl } from "./supabase.js";
+import { PS_SYM, PS_WORD } from "./ps-logo.js";
 
 const CATS={pokemon:"Pokémon",dragonball:"Dragon Ball",futbol:"Fútbol",arte:"Arte",videojuegos:"Videojuegos",vhs:"VHS",otro:"Otro"};
 const WCATS=CATS;
@@ -860,7 +861,7 @@ function shelfHTML(){
   const frames=cats.map(k=>`<button type="button" class="wframe" data-album="${k}" aria-label="Ver de cerca el marco de ${esc(CATS[k])}"><span class="wf-head">${plateHTML(k)}</span>${frameHTML(k,false,rows)}</button>`).join("");
   return `<div class="room"><div class="wall">${frames||'<div class="msg">Aquí irán tus marcos de cartas</div>'}</div>${rackHTML()}${cabHTML()}</div>
     <div class="msg ahint">Toca un marco para verlo de cerca, saca un juego del expositor o desliza el cristal de la vitrina</div>`}
-/* expositor de juegos: vitrina oscura con neón azul y las cajas de frente sobre baldas de luz */
+/* expositor de juegos: videoclub de los 90 con el logo de PlayStation en neón, baldas de madera y moqueta */
 const platOf=it=>{const m=/\b(?:PS|PlayStation\s*)([1-5])\b|\b(PSP|PS\s?Vita|PSX|PSone)\b/i.exec([it.set,it.name,it.code].join(" "));
   if(!m)return"";if(m[1])return"PS"+m[1];const x=m[2].toUpperCase().replace(/\s/g,"");return x==="PSX"||x==="PSONE"?"PS1":x==="PSVITA"?"VITA":x};
 const PLATNAME={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PlayStation 3",PS4:"PlayStation 4",PS5:"PlayStation 5",PSP:"PSP",VITA:"PS Vita"};
@@ -870,13 +871,13 @@ function rackHTML(){
   const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1;
     return `<div class="gslot"><button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor">
       <span class="g-spine"><span>${PLATNAME[p]}</span></span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>
-      <span class="g-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+      </button><span class="g-price" aria-hidden="true">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></div>`};
   return `<div class="rack">
-    <div class="rk-lights" aria-hidden="true"></div>
-    <div class="rk-plate"><span class="rk-sym" aria-hidden="true"><i class="tri"></i><i class="cir"></i><i class="crs"></i><i class="sqr"></i></span><span class="rk-title">PlayStation</span></div>
+    <div class="rk-sign" role="img" aria-label="PlayStation">${psSVG(PS_SYM,"rk-sym")}${psSVG(PS_WORD,"rk-word")}</div>
     <div class="rk-sub">${n?`${n} juego${n===1?"":"s"} · ${fmt0(v)}`:"Sin juegos todavía"}</div>
-    <div class="rk-body">${games.map(box).join("")}${Array.from({length:slots-games.length},()=>'<div class="gslot"><span class="gcase empty"></span></div>').join("")}</div>
-    <div class="rk-base" aria-hidden="true"></div></div>`}
+    <div class="rk-body">${games.map(box).join("")}${Array.from({length:slots-games.length},()=>`<div class="gslot"><span class="gcase empty"></span></div>`).join("")}</div>
+    <div class="rk-carpet" aria-hidden="true"></div></div>`}
+const psSVG=(l,cls)=>`<svg class="${cls}" viewBox="${l.vb}" aria-hidden="true">${l.g}</svg>`;
 /* vitrina de «Varios»: mueble bajo con puertas correderas de cristal */
 const CAB={open:null}; // "L" | "R": la puerta que está corrida
 // Cada tipo va en sus propias baldas, en este orden; uno nuevo empieza balda aunque queden huecos en la anterior.
