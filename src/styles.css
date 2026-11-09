@@ -606,3 +606,11 @@ button.slab:hover .sl-tag,button.tl:hover .sl-tag,button.slab:focus-visible .sl-
 @media (max-width:760px){.room{grid-template-columns:minmax(0,1fr)}.wall{gap:22px 26px}}
 @media (max-width:520px){.frm{--sw:34px;padding:13px}.wf-head .cab-plate{font-size:17px}.fview .frm{--sw:46px;padding:14px}.fview .calhead{grid-template-columns:auto 1fr}.fview .calhead>span:last-child{display:none}}
 @media (prefers-reduced-motion:reduce){.wframe,button.slab,button.tl{transition:none}}
+/* piezas con modelo 3D propio (model-viewer): en la vitrina, quieta y del alto de las demás; en la ficha, se gira con el dedo */
+model-viewer{--poster-color:transparent;--progress-bar-height:0;background:transparent}
+.ci-3d{display:block;height:calc(var(--ih) * 1.5);width:auto;aspect-ratio:1;margin:0 -16% calc(var(--ih) * -.24);pointer-events:none;filter:drop-shadow(0 12px 10px rgba(0,0,0,.55))}
+.m3d-stage{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.m3d-big{width:min(100%,460px);height:auto;aspect-ratio:1;cursor:grab}
+.m3d-big:active{cursor:grabbing}
+.m3d-hint{font-size:12px;color:var(--muted);text-align:center}
+.stagecol.is3d .stagectl,.stagecol.is3d>.hint{display:none}

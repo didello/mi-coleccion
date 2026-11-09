@@ -27,6 +27,11 @@ const CARDCATS=new Set(["pokemon","dragonball","futbol"]);
 const isBoxy=it=>isSealed(it)||!CARDCATS.has(it.cat);
 const isGraded=it=>it.kind==="Graded"&&!!it.grade;
 const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS.has(it.cat)); // van a la vitrina, no a los álbumes
+// Piezas con modelo 3D propio (hecho en blender/): se muestran en 3D en lugar de su foto.
+const MODELS3D=[{re:/jukebox|game music collection/i,src:"modelos/gameboy-jukebox.glb"}];
+function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?import.meta.env.BASE_URL+m.src:null}
+let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
+function mvHTML(src,alt,cls,attrs=""){needMV();return `<model-viewer class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="eager" interaction-prompt="none" environment-image="neutral" shadow-intensity="0" exposure="1.05" ${attrs}></model-viewer>`}
 function pillHTML(r,extra=""){if(r==null||!isFinite(r))return"";const c=Math.abs(r)<.005?"flat":r>0?"up":"down";const a=c==="flat"?"•":c==="up"?"▲":"▼";return `<span class="pill ${c}">${a} ${pct(r).replace(/^[+−]/,"")}${extra}</span>`}
 
 /* numbers */
@@ -306,6 +311,8 @@ function popCardHTML(it,pop){
 function gradeParts(g){const m=String(g||"").match(/^([A-Za-z]+)\s*([\d.]+)/);if(!m)return{grader:g||"",num:""};return{grader:m[1].toUpperCase(),num:m[2]}}
 const GDESC={"10":"GEM MT","9.5":"MINT+","9":"MINT","8.5":"NM-MT+","8":"NM-MT","7":"NM"};
 function stageHTML(it){
+  const m3=model3d(it);
+  if(m3)return `<div class="m3d-stage">${mvHTML(m3,it.name+" en 3D","m3d-big",'camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="-28deg 72deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"')}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
   const mode=state.dmode,p=pick(it,mode);
   const fx=isBoxy(it)?"":`<div class="shine ${it.cat==="futbol"?"refr":"holo"}"></div>`;
   const cut=!!(p&&p.kind==="off"&&(state.media[it.id]||{}).cutout);
@@ -413,6 +420,9 @@ function renderStage(){const it=state.items.find(i=>i.id===state.sel);if(!it)ret
   $("dOff").disabled=!s.off;$("dMine").disabled=!s.mine;
   $("dPhoto").hidden=!assets;$("dPhoto").textContent=it.photo?"Cambiar mi foto":"Subir mi foto";
   const md=state.media[it.id]||{};
+  $("stage").parentElement.classList.toggle("is3d",!!model3d(it));
+  if(model3d(it)){$("dOff").parentElement.hidden=true;$("imgsrc").textContent="Modelo 3D hecho a partir de las fotos de la caja";return}
+  $("dOff").parentElement.hidden=false;
   $("imgsrc").textContent=!eff?"Sin imagen todavía. Sube una foto de tu copia.":eff.kind==="off"?`Imagen oficial · ${md.src||"referencia"}${s.mine?"":" · aún no has subido tu foto"}`:`Mi copia${s.off?"":" · no hay imagen oficial de esta versión exacta"}`;
   applyFlip();bindTilt();
 }
@@ -793,7 +803,7 @@ function tpPutBack(id){const btn=document.querySelector(`#abook [data-apocket="$
   const sc=a.width/r.width,dx=(a.left+a.width/2)-(r.left+r.width/2),dy=(a.top+a.height/2)-(r.top+r.height/2);
   cl.animate([{transform:`translate(${dx}px,${dy}px) scale(${sc})`},{transform:`translateY(${-r.height*.55}px)`,offset:.7},{transform:"none"}],{duration:520,easing:"cubic-bezier(.3,.6,.3,1)"}).onfinish=()=>{btn.classList.remove("out");cl.remove()}}
 function renderToppsDetail(stage){const c=TP.byId[state.tsel];if(!c){closeDetail();return}
-  if(stage){$("stage").innerHTML=toppsStageHTML(c);$("imgsrc").textContent=c.sp?(c.src==="ef"?"Foto de la galería de Elite Fourum · enderezada y retocada":"Imagen de PriceCharting · enderezada y retocada"):"Sin foto todavía";applyFlip();bindTilt()}
+  if(stage){$("stage").parentElement.classList.remove("is3d");$("stage").innerHTML=toppsStageHTML(c);$("imgsrc").textContent=c.sp?(c.src==="ef"?"Foto de la galería de Elite Fourum · enderezada y retocada":"Imagen de PriceCharting · enderezada y retocada"):"Sin foto todavía";applyFlip();bindTilt()}
   $("info").innerHTML=toppsInfoHTML(c)}
 function openTopps(id){if(!TP.byId[id])return;const reopen=!$("overlay").hidden&&state.tsel;if(!reopen)lastFocus=document.activeElement;
   state.sel=null;state.tsel=id;state.flipped=false;TP.confirmOff=null;
@@ -891,7 +901,7 @@ const cabType=it=>isSealed(it)?"sellado":it.cat==="arte"?"arte":it.cat==="vhs"?"
 function cabHTML(){
   const l=visible("all").filter(isVarios),{n,v}=catTotals(l);
   const item=it=>{const q=it.qty||1;return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
-    <span class="ci-pic">${imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+    <span class="ci-pic">${model3d(it)?mvHTML(model3d(it),it.name,"ci-3d",'camera-orbit="-24deg 76deg auto" field-of-view="24deg" disable-zoom disable-tap tabindex="-1"'):imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
   return `<div class="cab" data-open="${CAB.open||""}">
     <div class="cab-top"><span class="cab-plate">Varios</span>${n?`<span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
     <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>

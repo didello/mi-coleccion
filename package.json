@@ -10,13 +10,16 @@
     "preview": "vite preview",
     "icons": "node scripts/make-icons.mjs",
     "migracion": "node scripts/build-import.mjs",
-    "precios": "node scripts/update-prices.mjs"
+    "precios": "node scripts/update-prices.mjs",
+    "modelo3d:texturas": "node blender/gameboy-jukebox/texturas.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2"
+    "@google/model-viewer": "^4.4.0",
+    "@supabase/supabase-js": "^2.117.2",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "sharp": "^0.35.5",

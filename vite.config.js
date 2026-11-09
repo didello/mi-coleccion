@@ -38,6 +38,12 @@ export default defineConfig({
             options: { cacheName: "catalogo", expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 } },
           },
           {
+            // Modelos 3D (blender/): pesan más que las imágenes, se guardan al verlos la primera vez.
+            urlPattern: ({ url }) => url.pathname.endsWith(".glb"),
+            handler: "CacheFirst",
+            options: { cacheName: "modelos3d", expiration: { maxEntries: 20 } },
+          },
+          {
             urlPattern: ({ url }) => url.origin === "https://fonts.googleapis.com" || url.origin === "https://fonts.gstatic.com",
             handler: "StaleWhileRevalidate",
             options: { cacheName: "fuentes" },

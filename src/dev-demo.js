@@ -15,6 +15,10 @@ export async function startDemo(startApp) {
      ["Gran Turismo 4", "PS2", 18, 10], ["The Last of Us", "PS3", 22, 15], ["Bloodborne", "PS4", 25, 20], ["Astro Bot", "PS5", 55, 50]]
       .forEach(([name, set, value, paid], i) => items.set("demo-juego-" + i, { cat: "videojuegos", kind: "Videojuego", name, set, value, paid, qty: 1, source: "guia", history: [] }));
   }
+  // /?demo&jukebox añade el Game Boy Jukebox para ver su modelo 3D en la vitrina
+  if (new URLSearchParams(location.search).has("jukebox")) {
+    data.get("items").set("demo-jukebox", { cat: "pokemon", kind: "Sellado", name: "Game Boy Jukebox (Game Music Collection)", set: "Pokémon Center", value: 120, paid: 80, qty: 1, source: "manual", history: [] });
+  }
   const listeners = new Map();
   const col = (c) => data.get(c) || data.set(c, new Map()).get(c);
   const emit = (c) => (listeners.get(c) || []).forEach((fn) => fn());
