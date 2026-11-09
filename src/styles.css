@@ -608,7 +608,7 @@ button.slab:hover .sl-tag,button.tl:hover .sl-tag,button.slab:focus-visible .sl-
 @media (prefers-reduced-motion:reduce){.wframe,button.slab,button.tl{transition:none}}
 /* piezas con modelo 3D propio (model-viewer): en la vitrina, quieta y del alto de las demás; en la ficha, se gira con el dedo */
 model-viewer{--poster-color:transparent;--progress-bar-height:0;background:transparent}
-.ci-3d{display:block;height:calc(var(--ih) * 1.5);width:auto;aspect-ratio:1;margin:0 -16% calc(var(--ih) * -.24);pointer-events:none;filter:drop-shadow(0 12px 10px rgba(0,0,0,.55))}
+.ci-3d{display:block;height:calc(var(--ih) * var(--h,1.5));width:auto;aspect-ratio:var(--ar,1);margin:0 -16% calc(var(--ih) * var(--b,.24) * -1);pointer-events:none;filter:drop-shadow(0 12px 10px rgba(0,0,0,.55))}
 .m3d-stage{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
 .m3d-big{width:min(100%,460px);height:auto;aspect-ratio:1;cursor:grab}
 .m3d-big:active{cursor:grabbing}

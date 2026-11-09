@@ -28,8 +28,12 @@ const isBoxy=it=>isSealed(it)||!CARDCATS.has(it.cat);
 const isGraded=it=>it.kind==="Graded"&&!!it.grade;
 const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS.has(it.cat)); // van a la vitrina, no a los álbumes
 // Piezas con modelo 3D propio (hecho en blender/): se muestran en 3D en lugar de su foto.
-const MODELS3D=[{re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb"}];
-function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?import.meta.env.BASE_URL+m.src:null}
+// orbit: cómo se ve en la vitrina; big: cómo empieza en la ficha; ar: ancho/alto del lienzo en la vitrina;
+// h: alto del lienzo (× --ih); b: cuánto baja el lienzo para que la caja se apoye en la balda (× --ih).
+const MODELS3D=[
+  {re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb",orbit:"-24deg 76deg auto",big:"-28deg 72deg auto",ar:1,h:1.5,b:.24},
+  {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
+function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:import.meta.env.BASE_URL+m.src}:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
 function mvHTML(src,alt,cls,attrs=""){needMV();return `<model-viewer class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="eager" interaction-prompt="none" environment-image="neutral" shadow-intensity="0" exposure="1.05" ${attrs}></model-viewer>`}
 function pillHTML(r,extra=""){if(r==null||!isFinite(r))return"";const c=Math.abs(r)<.005?"flat":r>0?"up":"down";const a=c==="flat"?"•":c==="up"?"▲":"▼";return `<span class="pill ${c}">${a} ${pct(r).replace(/^[+−]/,"")}${extra}</span>`}
@@ -312,7 +316,7 @@ function gradeParts(g){const m=String(g||"").match(/^([A-Za-z]+)\s*([\d.]+)/);if
 const GDESC={"10":"GEM MT","9.5":"MINT+","9":"MINT","8.5":"NM-MT+","8":"NM-MT","7":"NM"};
 function stageHTML(it){
   const m3=model3d(it);
-  if(m3)return `<div class="m3d-stage">${mvHTML(m3,it.name+" en 3D","m3d-big",'camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="-28deg 72deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"')}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
+  if(m3)return `<div class="m3d-stage">${mvHTML(m3.url,it.name+" en 3D","m3d-big",`camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="${m3.big}" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`)}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
   const mode=state.dmode,p=pick(it,mode);
   const fx=isBoxy(it)?"":`<div class="shine ${it.cat==="futbol"?"refr":"holo"}"></div>`;
   const cut=!!(p&&p.kind==="off"&&(state.media[it.id]||{}).cutout);
@@ -900,8 +904,8 @@ const CAB_TYPES=[["sellado","Sellados"],["arte","Láminas"],["vhs","VHS"],["otro
 const cabType=it=>isSealed(it)?"sellado":it.cat==="arte"?"arte":it.cat==="vhs"?"vhs":"otro";
 function cabHTML(){
   const l=visible("all").filter(isVarios),{n,v}=catTotals(l);
-  const item=it=>{const q=it.qty||1;return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
-    <span class="ci-pic">${model3d(it)?mvHTML(model3d(it),it.name,"ci-3d",'camera-orbit="-24deg 76deg auto" field-of-view="24deg" disable-zoom disable-tap tabindex="-1"'):imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+  const item=it=>{const q=it.qty||1,m3=model3d(it);return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
+    <span class="ci-pic">${m3?mvHTML(m3.url,it.name,"ci-3d",`camera-orbit="${m3.orbit}" field-of-view="24deg" disable-zoom disable-tap tabindex="-1" style="--ar:${m3.ar};--h:${m3.h};--b:${m3.b}"`):imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
   return `<div class="cab" data-open="${CAB.open||""}">
     <div class="cab-top"><span class="cab-plate">Varios</span>${n?`<span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
     <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>
