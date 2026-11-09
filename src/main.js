@@ -28,7 +28,7 @@ const isBoxy=it=>isSealed(it)||!CARDCATS.has(it.cat);
 const isGraded=it=>it.kind==="Graded"&&!!it.grade;
 const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS.has(it.cat)); // van a la vitrina, no a los álbumes
 // Piezas con modelo 3D propio (hecho en blender/): se muestran en 3D en lugar de su foto.
-const MODELS3D=[{re:/juke[s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb"}];
+const MODELS3D=[{re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb"}];
 function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?import.meta.env.BASE_URL+m.src:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
 function mvHTML(src,alt,cls,attrs=""){needMV();return `<model-viewer class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="eager" interaction-prompt="none" environment-image="neutral" shadow-intensity="0" exposure="1.05" ${attrs}></model-viewer>`}
