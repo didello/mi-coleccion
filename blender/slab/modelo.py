@@ -41,18 +41,21 @@ def imagen(nombre, color):
 
 
 def mat_textura(nombre, color, rugosidad=0.5):
+    """Etiquetas y carta: sin iluminación (KHR_materials_unlit), para que se vean con sus colores reales
+    y no las lave el reflejo de las luces. El brillo lo pone el plástico que tienen delante."""
     m = bpy.data.materials.new(nombre)
     m.use_nodes = True
     nt = m.node_tree
-    bsdf = nt.nodes["Principled BSDF"]
+    nt.nodes.remove(nt.nodes["Principled BSDF"])
+    fondo = nt.nodes.new("ShaderNodeBackground")
     tex = nt.nodes.new("ShaderNodeTexImage")
     tex.image = imagen(nombre + "-provisional", color)
-    nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-    bsdf.inputs["Roughness"].default_value = rugosidad
+    nt.links.new(tex.outputs["Color"], fondo.inputs["Color"])
+    nt.links.new(fondo.outputs["Background"], nt.nodes["Material Output"].inputs["Surface"])
     return m
 
 
-def mat_transparente(nombre, color, alfa, rugosidad, metal=0.0):
+def mat_transparente(nombre, color, alfa, rugosidad, metal=0.0, especular=None):
     """Plástico con transparencia por alfa (se ve bien en el navegador; la transmisión real sale negra)."""
     m = bpy.data.materials.new(nombre)
     m.use_nodes = True
@@ -61,6 +64,9 @@ def mat_transparente(nombre, color, alfa, rugosidad, metal=0.0):
     bsdf.inputs["Roughness"].default_value = rugosidad
     bsdf.inputs["Metallic"].default_value = metal
     bsdf.inputs["Alpha"].default_value = alfa
+    if especular is not None and "Specular IOR Level" in bsdf.inputs:
+        # Menos reflejo especular (se exporta como KHR_materials_specular).
+        bsdf.inputs["Specular IOR Level"].default_value = especular
     if hasattr(m, "surface_render_method"):
         m.surface_render_method = "BLENDED"
     try:
@@ -111,10 +117,11 @@ M = {
     "Carta": mat_textura("Carta", (0.6, 0.6, 0.62, 1), 0.3),
     "CartaTrasera": mat_textura("CartaTrasera", (0.15, 0.2, 0.45, 1), 0.35),
     # Caras planas del slab: casi invisibles, solo dejan un reflejo suave.
-    "Plastico": mat_transparente("Plastico", (0.86, 0.89, 0.91), 0.13, 0.05),
+    # Muy poca opacidad y poco reflejo: encima de la etiqueta y de la carta no debe haber velo.
+    "Plastico": mat_transparente("Plastico", (0.9, 0.92, 0.94), 0.035, 0.08, especular=0.2),
     # Cantos (contorno, escalones y paredes de las ventanas): gris plata satinado y esmerilado, como en
     # las fotos de cerca del slab.
-    "Cantos": mat_esmerilado("Cantos", (0.80, 0.81, 0.84), 0.9, 0.42, 0.25),
+    "Cantos": mat_esmerilado("Cantos", (0.6, 0.61, 0.64), 0.9, 0.5, 0.2),
     # Funda interior: esmerilada y blanquecina (el gris claro que rodea la carta en las fotos).
     "Funda": mat_transparente("Funda", (0.84, 0.86, 0.89), 0.58, 0.4),
 }

@@ -34,7 +34,7 @@ const MODELS3D=[
   {re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb",orbit:"-24deg 76deg auto",big:"-28deg 72deg auto",ar:1,h:1.5,b:.24},
   {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
 // Versión de los modelos: súbela al regenerar un .glb, porque la app los guarda en caché y si no seguiría mostrando el viejo.
-const MODELS_V="9";
+const MODELS_V="12";
 const modelUrl=f=>import.meta.env.BASE_URL+f+"?v="+MODELS_V;
 function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:modelUrl(m.src)}:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
@@ -328,7 +328,7 @@ function slabData(it){const g=gradeParts(it.grade),[n1,...n2]=String(it.name||""
       right:[num,GDESC[g.num]||"",g.num||it.grade||""]},
     card,back:it.cat==="pokemon"?modelUrl("modelos/dorso-pokemon.jpg"):it.cat==="dragonball"?modelUrl("modelos/dorso-dragonball.jpg"):{title:CATS[it.cat]||"Carta"}}}
 function stageHTML(it){
-  if(isGraded(it))return `<div class="m3d-stage">${mvHTML(SLAB_URL,it.name+" en su slab, en 3D","m3d-big m3d-slab",`camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="16deg" camera-orbit="0deg 90deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`,import.meta.env.BASE_URL+"modelos/estudio.hdr","1")}<div class="msg m3d-hint">Arrastra para girarlo y ver la etiqueta de detrás · pellizca o usa la rueda para acercarte</div></div>`;
+  if(isGraded(it))return `<div class="m3d-stage">${mvHTML(SLAB_URL,it.name+" en su slab, en 3D","m3d-big m3d-slab",`camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="16deg" camera-orbit="0deg 90deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`,import.meta.env.BASE_URL+"modelos/estudio.hdr","0.85")}<div class="msg m3d-hint">Arrastra para girarlo y ver la etiqueta de detrás · pellizca o usa la rueda para acercarte</div></div>`;
   const m3=model3d(it);
   if(m3)return `<div class="m3d-stage">${mvHTML(m3.url,it.name+" en 3D","m3d-big",`camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="${m3.big}" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`)}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
   const mode=state.dmode,p=pick(it,mode);

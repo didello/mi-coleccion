@@ -11,10 +11,10 @@ const W = 512, H = 256;
 
 // Rectángulos de luz en coordenadas del panorama (u: 0..1 alrededor, v: 0 arriba .. 1 abajo).
 const LUCES = [
-  { u0: 0.36, u1: 0.64, v0: 0.06, v1: 0.20, i: 7, c: [1, 1, 1] },        // cenital grande
-  { u0: 0.14, u1: 0.20, v0: 0.22, v1: 0.62, i: 16, c: [1, 0.99, 0.97] }, // tira izquierda
-  { u0: 0.80, u1: 0.86, v0: 0.22, v1: 0.62, i: 16, c: [0.97, 0.99, 1] }, // tira derecha
-  { u0: 0.36, u1: 0.64, v0: 0.24, v1: 0.56, i: 1.4, c: [1, 1, 1] },       // relleno frontal amplio y suave
+  { u0: 0.36, u1: 0.64, v0: 0.06, v1: 0.20, i: 4, c: [1, 1, 1] },        // cenital grande
+  { u0: 0.14, u1: 0.20, v0: 0.22, v1: 0.62, i: 8, c: [1, 0.99, 0.97] }, // tira izquierda
+  { u0: 0.80, u1: 0.86, v0: 0.22, v1: 0.62, i: 8, c: [0.97, 0.99, 1] }, // tira derecha
+  { u0: 0.36, u1: 0.64, v0: 0.24, v1: 0.56, i: 0.5, c: [1, 1, 1] },       // relleno frontal amplio y suave
   { u0: 0.97, u1: 1.03, v0: 0.18, v1: 0.58, i: 9, c: [1, 1, 1] },        // contraluz
 ];
 
