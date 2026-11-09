@@ -19,6 +19,7 @@
   "dependencies": {
     "@google/model-viewer": "^4.4.0",
     "@supabase/supabase-js": "^2.117.2",
+    "qrcode-generator": "^1.5.2",
     "three": "^0.183.2"
   },
   "devDependencies": {

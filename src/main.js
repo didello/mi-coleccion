@@ -33,9 +33,12 @@ const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS
 const MODELS3D=[
   {re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb",orbit:"-24deg 76deg auto",big:"-28deg 72deg auto",ar:1,h:1.5,b:.24},
   {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
-function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:import.meta.env.BASE_URL+m.src}:null}
+// Versión de los modelos: súbela al regenerar un .glb, porque la app los guarda en caché y si no seguiría mostrando el viejo.
+const MODELS_V="9";
+const modelUrl=f=>import.meta.env.BASE_URL+f+"?v="+MODELS_V;
+function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:modelUrl(m.src)}:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
-function mvHTML(src,alt,cls,attrs=""){needMV();return `<model-viewer class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="eager" interaction-prompt="none" environment-image="neutral" shadow-intensity="0" exposure="1.05" ${attrs}></model-viewer>`}
+function mvHTML(src,alt,cls,attrs="",env="neutral",exposure="1.05"){needMV();return `<model-viewer class="${cls}" src="${esc(src)}" alt="${esc(alt)}" loading="eager" interaction-prompt="none" environment-image="${esc(env)}" shadow-intensity="0" exposure="${exposure}" ${attrs}></model-viewer>`}
 function pillHTML(r,extra=""){if(r==null||!isFinite(r))return"";const c=Math.abs(r)<.005?"flat":r>0?"up":"down";const a=c==="flat"?"•":c==="up"?"▲":"▼";return `<span class="pill ${c}">${a} ${pct(r).replace(/^[+−]/,"")}${extra}</span>`}
 
 /* numbers */
@@ -314,7 +317,18 @@ function popCardHTML(it,pop){
 /* detail */
 function gradeParts(g){const m=String(g||"").match(/^([A-Za-z]+)\s*([\d.]+)/);if(!m)return{grader:g||"",num:""};return{grader:m[1].toUpperCase(),num:m[2]}}
 const GDESC={"10":"GEM MT","9.5":"MINT+","9":"MINT","8.5":"NM-MT+","8":"NM-MT","7":"NM"};
+// Slab 3D de las gradeadas: el mismo modelo para todas, con la etiqueta y la carta de cada una (src/slab3d.js).
+const SLAB_URL=modelUrl("modelos/slab.glb");
+function slabData(it){const g=gradeParts(it.grade),[n1,...n2]=String(it.name||"").split(/\s+(?:–|-|\/\/)\s+/);
+  const num=(()=>{const c=String(it.code||"").trim();if(!c)return"";if(c.startsWith("#"))return c;const t=c.split(/\s+/).filter(s=>/\d/.test(s));return t.length?"#"+t[t.length-1]:"#"+c})();
+  const p=pick(it,state.dmode),s=p&&String(p.src);
+  const card=!s?null:s.startsWith("sp:")?(([,sh,c,r])=>({sheet:catalogUrl(sh),cell:c,rot:r==="1"}))(s.split(":")):{url:s};
+  return{label:{grader:g.grader||"PSA",cert:it.cert||"",qr:it.cert&&(g.grader||"PSA")==="PSA"?`https://www.psacard.com/cert/${it.cert}`:it.cert,
+      left:[it.set,n1,[n2.join(" – "),it.serial].filter(Boolean).join(" ")].map(t=>String(t||"").toUpperCase()),
+      right:[num,GDESC[g.num]||"",g.num||it.grade||""]},
+    card,back:it.cat==="pokemon"?modelUrl("modelos/dorso-pokemon.jpg"):it.cat==="dragonball"?modelUrl("modelos/dorso-dragonball.jpg"):{title:CATS[it.cat]||"Carta"}}}
 function stageHTML(it){
+  if(isGraded(it))return `<div class="m3d-stage">${mvHTML(SLAB_URL,it.name+" en su slab, en 3D","m3d-big m3d-slab",`camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="16deg" camera-orbit="0deg 90deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`,import.meta.env.BASE_URL+"modelos/estudio.hdr","1")}<div class="msg m3d-hint">Arrastra para girarlo y ver la etiqueta de detrás · pellizca o usa la rueda para acercarte</div></div>`;
   const m3=model3d(it);
   if(m3)return `<div class="m3d-stage">${mvHTML(m3.url,it.name+" en 3D","m3d-big",`camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="${m3.big}" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`)}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
   const mode=state.dmode,p=pick(it,mode);
@@ -406,6 +420,7 @@ function infoHTML(it){
         <label>Pagado (unidad)<input id="e-paid" type="number" step="0.01" min="0" value="${it.paid??""}"${it.paidMode==="pull"?" disabled":""}></label>
         <label class="full pullchk"><span><input type="checkbox" id="e-pull"${it.paidMode==="pull"?" checked":""}> Obtenida de sobres / caja</span><small>${it.paidMode==="pull"&&it.paidNote?esc(it.paidNote):`El coste será el <b class="pullpct">${Math.round(pullPct()*100)}%</b> del precio raw del día en que se registre.`}</small></label>
         <label>Cantidad<input id="e-qty" type="number" min="1" value="${it.qty||1}"></label>
+        ${isGraded(it)?`<label>Nº de certificado<input id="e-cert" inputmode="numeric" value="${esc(it.cert||"")}" placeholder="sale en la etiqueta del slab"></label>`:""}
         <label class="full">Valor manual (unidad)<input id="e-val" type="number" step="0.01" min="0" value="${it.source==="guia"||it.source==="ebay"?"":(it.value??"")}" placeholder="${it.source==="guia"?"se actualiza solo cada día":it.source==="ebay"?"precio de ventas eBay":""}"></label>
         <label class="full">Enlace de PriceCharting / SportsCardsPro<input id="e-ref" type="url" value="${esc(it.ref||"")}" placeholder="https://www.pricecharting.com/game/…"></label>
         ${it.priceNote&&it.source!=="ebay"?`<div class="full warn">${esc(it.priceNote)}</div>`:""}
@@ -424,7 +439,8 @@ function renderStage(){const it=state.items.find(i=>i.id===state.sel);if(!it)ret
   $("dOff").disabled=!s.off;$("dMine").disabled=!s.mine;
   $("dPhoto").hidden=!assets;$("dPhoto").textContent=it.photo?"Cambiar mi foto":"Subir mi foto";
   const md=state.media[it.id]||{};
-  $("stage").parentElement.classList.toggle("is3d",!!model3d(it));
+  $("stage").parentElement.classList.toggle("is3d",!!model3d(it)||isGraded(it));
+  if(isGraded(it)){const mv=$("stage").querySelector("model-viewer");needMV().then(()=>import("./slab3d.js")).then(m=>m.dressSlab(mv,slabData(it))).catch(e=>console.error(e))}
   if(model3d(it)){$("dOff").parentElement.hidden=true;$("imgsrc").textContent="Modelo 3D hecho a partir de las fotos de la caja";return}
   $("dOff").parentElement.hidden=false;
   $("imgsrc").textContent=!eff?"Sin imagen todavía. Sube una foto de tu copia.":eff.kind==="off"?`Imagen oficial · ${md.src||"referencia"}${s.mine?"":" · aún no has subido tu foto"}`:`Mi copia${s.off?"":" · no hay imagen oficial de esta versión exacta"}`;
@@ -509,6 +525,7 @@ $("info").addEventListener("click",async e=>{
     if(vs===""&&ebay&&it.source!=="ebay"){toast("Escribe en «Valor manual» el precio que veas en las ventas de eBay");$("e-val").focus();return}
     if(vs!==""){const v=parseFloat(vs);if(!isNaN(v)){patch.value=v;patch.source=ebay?"ebay":"manual";patch.sourceName=ebay?`Ventas eBay: ${fmt(v)} (puesto a mano)`:"Valor puesto a mano";const today=new Date().toISOString().slice(0,10);patch.valueDate=today;patch.history=[...(it.history||[]).filter(p=>p.d!==today),{d:today,v}]}}
     // Enlace: con uno de PriceCharting/SportsCardsPro, sin eBay y sin valor a mano, la próxima revisión diaria toma el precio de la guía.
+    if($("e-cert")){const c=$("e-cert").value.replace(/\s+/g,"");if(c!==(it.cert||""))patch.cert=c}
     const ref=$("e-ref").value.trim(),guide=isGuideUrl(ref);let msg="Cambios guardados";
     if(ref!==(it.ref||"")){patch.ref=ref;if(it.priceNote)patch.priceNote=null} // el aviso era del enlace anterior
     if(vs===""&&!ebay){
@@ -586,7 +603,7 @@ const KINDS={card:[["Graded","Graded (gradeada)"],["Suelta","Suelta (sin gradear
   otro:[["Suelta","Sin sellar"],["Sellado","Sellado"]],arte:[["Lámina","Lámina"]],vhs:[["Suelta","Sin sellar"],["Sellado","Sellado"]]};
 function addKinds(){const cat=$("fCat").value,prev=$("fKind").value,opts=KINDS[CARDCATS.has(cat)?"card":cat]||KINDS.otro;
   $("fKind").innerHTML=opts.map(([v,l])=>`<option value="${v}"${v===prev?" selected":""}>${esc(l)}</option>`).join("");addWhere()}
-function addWhere(){const it={cat:$("fCat").value,kind:$("fKind").value},g=it.kind==="Graded";$("fGradeL").hidden=!g;if(!g)$("fGrade").value="";
+function addWhere(){const it={cat:$("fCat").value,kind:$("fKind").value},g=it.kind==="Graded";$("fGradeL").hidden=!g;$("fCertL").hidden=!g;if(!g){$("fGrade").value="";$("fCert").value=""}
   const shelf=(CAB_TYPES.find(([k])=>k===cabType(it))||[])[1]||"";
   $("fWhere").textContent=it.cat==="videojuegos"?"Irá al expositor de juegos.":isVarios(it)?`Irá a la vitrina de Varios, balda «${shelf}».`:`Irá al álbum de ${CATS[it.cat]}.`}
 $("fCat").addEventListener("change",addKinds);$("fKind").addEventListener("change",addWhere);
@@ -594,7 +611,7 @@ $("addSave").addEventListener("click",async()=>{
   const name=$("fName").value.trim();if(!name){$("fName").focus();toast("Pon al menos el nombre");return}
   if(!db){toast("No se puede guardar desde esta vista");return}
   const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:v};const val=num("fVal"),today=new Date().toISOString().slice(0,10);
-  const doc={name,cat:$("fCat").value,kind:$("fKind").value,set:$("fSet").value.trim(),grade:$("fGrade").value.trim(),qty:Math.max(1,parseInt($("fQty").value,10)||1),paid:num("fPaid"),value:val,source:"manual",sourceName:val==null?"Pendiente de buscar referencia":"Valor puesto a mano",ref:$("fRef").value.trim(),history:val==null?[]:[{d:today,v:val}],added:today,updated:today};
+  const doc={name,cat:$("fCat").value,kind:$("fKind").value,set:$("fSet").value.trim(),grade:$("fGrade").value.trim(),cert:$("fCert").value.replace(/\s+/g,""),qty:Math.max(1,parseInt($("fQty").value,10)||1),paid:num("fPaid"),value:val,source:"manual",sourceName:val==null?"Pendiente de buscar referencia":"Valor puesto a mano",ref:$("fRef").value.trim(),history:val==null?[]:[{d:today,v:val}],added:today,updated:today};
   if($("fPull").checked){doc.paidMode="pull";doc.paid=null}
   try{await db.collection("items").add(doc);$("addForm").reset();$("fQty").value=1;addKinds();$("addPanel").hidden=true;toast("Producto añadido")}catch(err){toast(err&&err.code==="quota_exceeded"?"La colección está llena.":"No se pudo guardar. Inténtalo otra vez.")}
 });
