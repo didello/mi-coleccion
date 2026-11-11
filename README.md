@@ -54,6 +54,8 @@ La revisión diaria (`.github/workflows/precios.yml`):
 
 Las piezas marcadas como **Vendida** (campo `sold: { d, price }`) pasan a la pestaña **Ventas**: dejan de contar en totales, gráficos, álbumes y avisos, y la revisión diaria ya no las toca. «Deshacer venta» las devuelve a la colección.
 
+En las piezas con precio de la guía, la revisión diaria guarda también sus **3 últimas ventas cerradas** de la ficha de PriceCharting (campo `lastSales: [{ d, p, t, u }]`: fecha, precio, título y enlace a eBay), de la columna de su nota. La ficha las muestra en «Precios de mercado»; si la pieza no tiene precio de la guía, avisa de que no se pueden confirmar ventas.
+
 Se puede lanzar a mano desde **Actions → Revisión diaria de precios → Run workflow**, con la opción de simulación para ver qué cambiaría sin guardar nada.
 
 > Una pieza nueva con enlace de PriceCharting o SportsCardsPro y sin valor pasa a **Guía** en la siguiente revisión. Si escribes un valor a mano en su ficha, la revisión deja de tocarla.
