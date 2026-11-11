@@ -32,7 +32,9 @@ const isVarios=it=>!it.pending&&it.cat!=="videojuegos"&&(isSealed(it)||!CARDCATS
 // h: alto del lienzo (× --ih); b: cuánto baja el lienzo para que la caja se apoye en la balda (× --ih).
 const MODELS3D=[
   {re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb",orbit:"-24deg 76deg auto",big:"-28deg 72deg auto",ar:1,h:1.5,b:.24},
-  {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
+  {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08},
+  // Mismas medidas y encuadre que la UPC 30th, para que en la vitrina queden iguales.
+  {re:/(\bupc\b|ultra[\s-]*premium).*charizard|charizard.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-charizard.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
 // Versión de los modelos: súbela al regenerar un .glb, porque la app los guarda en caché y si no seguiría mostrando el viejo.
 const MODELS_V="12";
 const modelUrl=f=>import.meta.env.BASE_URL+f+"?v="+MODELS_V;
@@ -298,6 +300,13 @@ tabsEl.addEventListener("click",e=>{if(drag&&drag.moved){e.stopImmediatePropagat
 tabsEl.addEventListener("contextmenu",e=>{if(e.target.closest("[data-tab]"))e.preventDefault()});
 
 
+// Últimas 3 ventas cerradas de su ficha de PriceCharting (las guarda la revisión diaria, solo en piezas con precio de la guía).
+function salesHTML(it){const l=it.lastSales;
+  const none=t=>`<div class="sales"><h4>Últimas ventas</h4><div class="msg">${t}</div></div>`;
+  if(!l)return none(it.source==="guia"&&it.ref?"Aparecerán tras la próxima revisión de precios.":"No puedo confirmar ventas de esta pieza en PriceCharting.");
+  if(!l.length)return none("PriceCharting no tiene ventas recientes de esta pieza.");
+  return `<div class="sales"><h4>Últimas ventas</h4>${l.map(s=>{const inner=`<span class="sd">${esc(dateES(s.d))}</span><span class="st">${esc(s.t||"Venta sin título")}</span><span class="sp">${fmt(s.p)}</span>`;
+    return s.u?`<a class="sale" href="${esc(s.u)}" target="_blank" rel="noopener" title="Ver la venta en eBay">${inner}</a>`:`<div class="sale">${inner}</div>`}).join("")}</div>`}
 const nES=n=>n==null||isNaN(n)?"—":Number(n).toLocaleString("es-ES");
 function popCardHTML(it,pop){
   const g=gradeParts(it.grade);
@@ -386,6 +395,7 @@ function infoHTML(it){
       <div class="cardhead"><h3 style="font-size:16px">Precios de mercado</h3><span class="msg">${m.d?`${esc(md.src||"")} · ${esc(dateES(m.d))}`:"sin referencia"}</span></div>
       ${isGame(it)?`<div class="stats3">${mt("loose","Loose")}${mt("cib","Complete")}${mt("new","New")}</div>`:isSealed(it)?`<div class="stats3" style="grid-template-columns:1fr">${mt("sealed","Sellado")}</div>`:`<div class="stats3">${mt("raw","Raw")}${mt("psa9","PSA 9")}${mt("psa10","PSA 10")}</div>`}
       ${m.note?`<div class="msg">${esc(m.note)}</div>`:""}
+      ${salesHTML(it)}
     </div>
     ${isGraded(it)?popCardHTML(it,md.pop):""}
 

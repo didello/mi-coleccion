@@ -29,30 +29,67 @@ export function parsePrices(html) {
   return out;
 }
 
+// Ventas cerradas de la ficha («Sold Listings»): una pestaña por columna de precio, las más recientes primero.
+const SALES_TAB = { raw: "used", g7: "cib", g8: "new", psa9: "graded", g95: "box-only", psa10: "manual-only" };
+const strip = (s) => s.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&#0?39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
+export function parseSales(html) {
+  const out = {};
+  for (const [key, tab] of Object.entries(SALES_TAB)) {
+    const i = html.indexOf(`<div class="completed-auctions-${tab}"`);
+    if (i < 0) continue;
+    const j = html.indexOf('<div class="completed-auctions-', i + 10);
+    const block = html.slice(i, j < 0 ? undefined : j);
+    const list = [];
+    for (const row of block.split(/<tr id="/).slice(1)) {
+      const id = row.slice(0, row.indexOf('"'));
+      const d = (row.match(/<td class="date">\s*(\d{4}-\d{2}-\d{2})\s*<\/td>/) || [])[1];
+      const p = parseFloat(((row.match(/class="js-price"[^>]*>\s*([^<]+)</) || [])[1] || "").replace(/[$,\s]/g, ""));
+      if (!d || !Number.isFinite(p)) continue;
+      const t = strip((row.match(/<td class="title">\s*<a[^>]*>([\s\S]*?)<\/a>/) || [])[1] || "");
+      const sale = { d, p, t: t.slice(0, 120) };
+      if (/^ebay-\d+$/.test(id)) sale.u = `https://www.ebay.com/itm/${id.slice(5)}`;
+      list.push(sale);
+    }
+    out[key] = list.sort((a, b) => b.d.localeCompare(a.d));
+  }
+  return out;
+}
+
 export async function fetchPrices(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" } });
   if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status} en ${url}`), { status: res.status });
-  return parsePrices(await res.text());
+  const html = await res.text();
+  const prices = parsePrices(html);
+  // Las ventas van aparte (no enumerables) para no contar como un precio más.
+  Object.defineProperty(prices, "sales", { value: parseSales(html), enumerable: false });
+  return prices;
 }
 
 // Qué columna corresponde a la pieza según su tipo y nota.
 export const isGame = (item) => item.cat === "videojuegos";
 
-export function priceFor(item, prices) {
+// Columna de la ficha que le toca a la pieza (null si su nota no tiene columna).
+export function fieldFor(item) {
   if (isGame(item)) {
-    if (item.kind === "Sellado") return prices.g8 ?? null; // New
-    if (item.kind === "Graded") return prices.psa9 ?? null; // Graded
-    return prices.raw ?? null; // Loose
+    if (item.kind === "Sellado") return "g8"; // New
+    if (item.kind === "Graded") return "psa9"; // Graded
+    return "raw"; // Loose
   }
-  if (item.kind === "Sellado") return prices.raw ?? null;
-  if (item.kind !== "Graded" || !item.grade) return prices.raw ?? null;
+  if (item.kind === "Sellado") return "raw";
+  if (item.kind !== "Graded" || !item.grade) return "raw";
   const num = (String(item.grade).match(/([\d.]+)/) || [])[1];
-  if (num === "10") return prices.psa10 ?? null;
-  if (num === "9.5") return prices.g95 ?? null;
-  if (num === "9") return prices.psa9 ?? null;
-  if (num === "8") return prices.g8 ?? null;
-  if (num === "7") return prices.g7 ?? null;
-  return null;
+  return { 10: "psa10", 9.5: "g95", 9: "psa9", 8: "g8", 7: "g7" }[num] || null;
+}
+
+export function priceFor(item, prices) {
+  const k = fieldFor(item);
+  return k ? prices[k] ?? null : null;
+}
+
+// Las 3 ventas cerradas más recientes de la columna de la pieza.
+export function lastSalesFor(item, prices) {
+  const k = fieldFor(item);
+  return k && prices.sales && prices.sales[k] ? prices.sales[k].slice(0, 3) : [];
 }
 
 // ---------- Buscar la ficha de una pieza que no tiene enlace ----------

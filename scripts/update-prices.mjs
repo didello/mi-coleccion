@@ -15,7 +15,7 @@
 // Opcional: DRY_RUN=1 para ver qué cambiaría sin guardar nada.
 
 import { createClient } from "@supabase/supabase-js";
-import { canSearchGuide, fetchPrices, findGuideUrl, isGame, isPriceGuideUrl, priceFor } from "./lib/pricecharting.mjs";
+import { canSearchGuide, fetchPrices, findGuideUrl, isGame, isPriceGuideUrl, lastSalesFor, priceFor } from "./lib/pricecharting.mjs";
 
 const URL_ = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -198,6 +198,12 @@ for (const row of items) {
       failed++;
     }
   } else kept++;
+
+  // Últimas ventas de su ficha, solo si el precio sale de la guía (si no, podrían ser de otra versión).
+  if (it.source === "guia" && isPriceGuideUrl(it.ref) && !it.pending) {
+    const got = priceCache.has(it.ref) ? await priceCache.get(it.ref) : null;
+    if (got && Object.keys(got).length) it.lastSales = lastSalesFor(it, got);
+  } else delete it.lastSales;
 
   it.history = withToday(it.history, value);
   it.updated = today;
