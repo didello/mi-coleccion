@@ -329,8 +329,8 @@ function pcHover(box){
     const px=r.left-br.left+p.x*sx,py=r.top-br.top+p.y*sy;
     ring.style.cssText=`left:${px}px;top:${py}px`;ring.className="pcring "+(p.k==="s"?"s":"m");
     const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-    tip.innerHTML=p.k==="s"?`<b>Venta · ${esc(dateES(p.d))}</b><span><i style="background:#f5c84b"></i>Vendida por <em>${fmt(p.v)}</em></span>${p.t?`<span class="pct">${esc(p.t)}</span>`:""}`
-      :`<b>Precio PriceCharting · ${MESL[+p.d.slice(5,7)-1]} ${p.d.slice(0,4)}</b><span><i style="background:#c6f24e"></i>Precio del mes <em>${fmt(p.v)}</em></span>`;
+    tip.innerHTML=p.k==="s"?`<b>Venta · ${esc(dateES(p.d))}</b><span><i style="background:#34d26b"></i>Vendida por <em>${fmt(p.v)}</em></span>${p.t?`<span class="pct">${esc(p.t)}</span>`:""}`
+      :`<b>Precio PriceCharting · ${MESL[+p.d.slice(5,7)-1]} ${p.d.slice(0,4)}</b><span><i style="background:#f5c84b"></i>Precio del mes <em>${fmt(p.v)}</em></span>`;
     tip.hidden=ring.hidden=false;
     const tw=tip.offsetWidth,left=px+14+tw>br.width?px-14-tw:px+14;tip.style.left=Math.max(0,left)+"px";tip.style.top=Math.max(0,py-tip.offsetHeight-10)+"px"})}
 // Últimas 3 ventas cerradas de su ficha de PriceCharting (las guarda la revisión diaria, solo en piezas con precio de la guía).
