@@ -34,9 +34,11 @@ const MODELS3D=[
   {re:/juke[\s-]*box|game music collection/i,src:"modelos/gameboy-jukebox.glb",orbit:"-24deg 76deg auto",big:"-28deg 72deg auto",ar:1,h:1.5,b:.24},
   {re:/(\bupc\b|ultra[\s-]*premium).*30th|30th.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08},
   // Mismas medidas y encuadre que la UPC 30th, para que en la vitrina queden iguales.
-  {re:/(\bupc\b|ultra[\s-]*premium).*charizard|charizard.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-charizard.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08}];
+  {re:/(\bupc\b|ultra[\s-]*premium).*charizard|charizard.*(\bupc\b|ultra[\s-]*premium)/i,src:"modelos/upc-charizard.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:2.1,h:1.2,b:.08},
+  // ETB Pokémon Center 30th: misma cámara que las UPC, así sale a escala real (más pequeña) y bajada hasta la balda.
+  {re:/(elite[\s-]*trainer[\s-]*box|\betb\b).*30th|30th.*(elite[\s-]*trainer[\s-]*box|\betb\b)/i,src:"modelos/etb-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:1.2,h:1.2,b:.225}];
 // Versión de los modelos: súbela al regenerar un .glb, porque la app los guarda en caché y si no seguiría mostrando el viejo.
-const MODELS_V="12";
+const MODELS_V="14";
 const modelUrl=f=>import.meta.env.BASE_URL+f+"?v="+MODELS_V;
 function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:modelUrl(m.src)}:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
