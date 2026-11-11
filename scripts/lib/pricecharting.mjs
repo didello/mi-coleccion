@@ -102,17 +102,56 @@ export function priceFor(item, prices) {
   return k ? prices[k] ?? null : null;
 }
 
-// Las 3 ventas cerradas más recientes de la columna de la pieza.
-export function lastSalesFor(item, prices) {
+// ---------- Solo ventas de la misma pieza ----------
+// La lista de ventas de PriceCharting mezcla a veces lotes (varias cajas o cartas juntas), otras versiones
+// (p. ej. «Day & Night» en la UPC Night) u otras notas. Se quedan solo las que son exactamente la pieza:
+//  - fuera lotes y packs (lot, bundle, x2, «2 boxes», «Day & Night»…);
+//  - sellados: fuera cajas vacías, abiertas o sin cartas;
+//  - gradeadas: si el título nombra una nota, tiene que ser la suya (misma empresa y número);
+//  - cartas sin gradear: fuera las que nombran una nota (son slabs).
+// No se filtra por precio: una venta cara o barata de la misma pieza también cuenta.
+const LOT = /\b(lots?|bundles?|bulk|set of|pair|combo|both|x\s?[2-9]|[2-9]\s?x|[2-9]\s*(?:boxes|box|packs|units|cases|pcs|pieces|sets|copies))\b|\bday\s*(?:&|and|\+|\/)\s*night\b|\bnight\s*(?:&|and|\+|\/)\s*day\b/i;
+const NOT_SEALED = /\b(empty|opened|open box|no cards|box only|damaged|resealed)\b/i;
+const GRADE = /\b(PSA|BGS|BECKETT|CGC|SGC|TAG|ACE)\s*(?:graded\s*|gem\s*mint\s*)?(\d{1,2}(?:\.5)?)\b/gi;
+const graderOf = (g) => (g.toUpperCase() === "BECKETT" ? "BGS" : g.toUpperCase());
+// Precio de la guía en una fecha a partir del historial mensual (parte proporcional entre dos meses).
+export function trendAt(monthly, d) {
+  if (!monthly || !monthly.length) return null;
+  const T = (x) => +new Date(x + "T12:00:00Z"), t = T(d);
+  if (t <= T(monthly[0][0])) return monthly[0][1];
+  for (let i = 1; i < monthly.length; i++) {
+    const [d1, v1] = monthly[i];
+    if (t <= T(d1)) { const [d0, v0] = monthly[i - 1]; return v0 + ((v1 - v0) * (t - T(d0))) / (T(d1) - T(d0)); }
+  }
+  return monthly.at(-1)[1];
+}
+export function sameItemSale(item, sale) {
+  const t = sale.t || "";
+  if (LOT.test(t)) return false;
+  if (item.kind === "Sellado" && NOT_SEALED.test(t)) return false;
+  const grades = [...t.matchAll(GRADE)];
+  if (item.kind === "Graded" && item.grade) {
+    const m = String(item.grade).match(/([A-Za-z]+)\s*(\d{1,2}(?:\.5)?)/);
+    if (m && grades.some((g) => graderOf(g[1]) !== graderOf(m[1]) || g[2] !== m[2])) return false;
+  } else if (!isGame(item) && item.kind !== "Sellado" && grades.length) return false;
+  return true;
+}
+function salesOf(item, prices) {
   const k = fieldFor(item);
-  return k && prices.sales && prices.sales[k] ? prices.sales[k].slice(0, 3) : [];
+  if (!k || !prices.sales || !prices.sales[k]) return [];
+  return prices.sales[k].filter((s) => sameItemSale(item, s));
 }
 
-// Datos de la gráfica de la ficha: historial mensual de su columna y todas sus ventas cerradas (hasta 60).
+// Las 3 ventas cerradas más recientes de la pieza.
+export function lastSalesFor(item, prices) {
+  return salesOf(item, prices).slice(0, 3);
+}
+
+// Datos de la gráfica de la ficha: historial mensual de su columna y sus ventas cerradas (hasta 60).
 export function guideChartFor(item, prices) {
   const k = fieldFor(item);
   if (!k) return null;
-  const monthly = (prices.history && prices.history[k]) || [], sales = ((prices.sales && prices.sales[k]) || []).slice(0, 60);
+  const monthly = (prices.history && prices.history[k]) || [], sales = salesOf(item, prices).slice(0, 60);
   return monthly.length || sales.length ? { monthly, sales } : null;
 }
 
