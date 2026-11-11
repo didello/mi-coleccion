@@ -55,13 +55,29 @@ export function parseSales(html) {
   return out;
 }
 
+// Historial mensual de la guía (la gráfica de la propia ficha): un precio por mes y columna, en céntimos.
+const CHART_KEY = { raw: "used", g7: "cib", g8: "new", psa9: "graded", g95: "boxonly", psa10: "manualonly" };
+export function parseHistory(html) {
+  const m = html.match(/chart_data\s*=\s*(\{[\s\S]*?\});/);
+  if (!m) return {};
+  let data;
+  try { data = JSON.parse(m[1]); } catch { return {}; }
+  const out = {};
+  for (const [key, ck] of Object.entries(CHART_KEY)) {
+    const list = (data[ck] || []).filter(([, v]) => v > 0).map(([t, v]) => [new Date(t).toISOString().slice(0, 10), Math.round(v) / 100]);
+    if (list.length) out[key] = list;
+  }
+  return out;
+}
+
 export async function fetchPrices(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" } });
   if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status} en ${url}`), { status: res.status });
   const html = await res.text();
   const prices = parsePrices(html);
-  // Las ventas van aparte (no enumerables) para no contar como un precio más.
+  // Ventas e historial van aparte (no enumerables) para no contar como un precio más.
   Object.defineProperty(prices, "sales", { value: parseSales(html), enumerable: false });
+  Object.defineProperty(prices, "history", { value: parseHistory(html), enumerable: false });
   return prices;
 }
 
@@ -90,6 +106,14 @@ export function priceFor(item, prices) {
 export function lastSalesFor(item, prices) {
   const k = fieldFor(item);
   return k && prices.sales && prices.sales[k] ? prices.sales[k].slice(0, 3) : [];
+}
+
+// Datos de la gráfica de la ficha: historial mensual de su columna y todas sus ventas cerradas (hasta 60).
+export function guideChartFor(item, prices) {
+  const k = fieldFor(item);
+  if (!k) return null;
+  const monthly = (prices.history && prices.history[k]) || [], sales = ((prices.sales && prices.sales[k]) || []).slice(0, 60);
+  return monthly.length || sales.length ? { monthly, sales } : null;
 }
 
 // ---------- Buscar la ficha de una pieza que no tiene enlace ----------

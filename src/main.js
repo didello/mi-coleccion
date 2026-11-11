@@ -302,6 +302,37 @@ tabsEl.addEventListener("click",e=>{if(drag&&drag.moved){e.stopImmediatePropagat
 tabsEl.addEventListener("contextmenu",e=>{if(e.target.closest("[data-tab]"))e.preventDefault()});
 
 
+// Tendencia de PriceCharting en la ficha: línea con el precio mensual de la guía (su columna) y un punto por cada venta
+// cerrada, del último año. Al pasar el cursor (o el dedo) se ve el detalle del punto más cercano.
+function pcChartHTML(pc,w){
+  const last=pc.monthly.at(-1)[0],from=new Date(new Date(last+"T12:00:00").setFullYear(new Date(last+"T12:00:00").getFullYear()-1)).toISOString().slice(0,10);
+  const L=pc.monthly.filter(p=>p[0]>=from),S=(pc.sales||[]).filter(s=>s.d>=from),T=d=>+new Date(d+"T12:00:00");
+  const h=190,P=[12,22,24,54],ts=[...L.map(p=>T(p[0])),...S.map(s=>T(s.d))],t0=Math.min(...ts),t1=Math.max(...ts);
+  const top=Math.max(...L.map(p=>p[1]),...S.map(s=>s.p)),st=niceStep(top,4),hi=Math.ceil(top/st)*st||1;
+  const x=d=>P[3]+(T(d)-t0)/((t1-t0)||1)*(w-P[1]-P[3]),y=v=>P[0]+(1-v/hi)*(h-P[0]-P[2]);
+  let g="";for(let v=0;v<=hi+st/2;v+=st)g+=`<line x1="${P[3]}" x2="${w-P[1]}" y1="${y(v)}" y2="${y(v)}" class="gl"/><text x="${P[3]-8}" y="${y(v)+4}" text-anchor="end" class="ax">${fmt0(v)}</text>`;
+  const MES=["ene","feb","mar","abr","may","jun","jul","ago","sept","oct","nov","dic"],months=[...new Set(L.map(p=>p[0].slice(0,7)))],stp=Math.ceil(months.length/5);
+  months.forEach((m,i)=>{const d=m+"-01";if(i%stp||T(d)<t0)return;g+=`<text x="${x(d)}" y="${h-6}" text-anchor="middle" class="ax">${MES[+m.slice(5)-1]} ${m.slice(2,4)}</text>`});
+  const pts=L.map(p=>`${x(p[0]).toFixed(1)},${y(p[1]).toFixed(1)}`);
+  if(L.length>1)g+=`<path d="M${pts.join(" L")} L${x(L.at(-1)[0])},${y(0)} L${x(L[0][0])},${y(0)}Z" class="pa"/><polyline points="${pts.join(" ")}" class="pl"/>`;
+  const geo=[];L.forEach(p=>{g+=`<circle cx="${x(p[0])}" cy="${y(p[1])}" r="2.6" class="pm"/>`;geo.push({x:x(p[0]),y:y(p[1]),k:"m",d:p[0],v:p[1]})});
+  S.forEach(s=>{g+=`<circle cx="${x(s.d)}" cy="${y(s.p)}" r="4.3" class="ps"/>`;geo.push({x:x(s.d),y:y(s.p),k:"s",d:s.d,v:s.p,t:s.t})});
+  CHARTS.pc={w,h,geo};
+  return `<div class="pcchart"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Precio mensual de PriceCharting y ventas reales del último año">${g}</svg></div>
+    <div class="pclg"><span><i class="pm"></i>Precio mensual (PriceCharting)</span><span><i class="ps"></i>Venta real</span></div>`}
+function pcHover(box){
+  const tip=document.createElement("div"),ring=document.createElement("i");tip.className="chtip";ring.className="pcring";
+  const hide=()=>{tip.hidden=ring.hidden=true};hide();box.append(ring,tip);box.addEventListener("pointerleave",hide);
+  box.addEventListener("pointermove",e=>{const c=CHARTS.pc,svg=box.querySelector("svg");if(!c||!svg||!c.geo.length){hide();return}
+    const r=svg.getBoundingClientRect(),br=box.getBoundingClientRect(),sx=r.width/c.w,sy=r.height/c.h,mx=(e.clientX-r.left)/sx,my=(e.clientY-r.top)/sy;
+    let p=null,best=Infinity;for(const q of c.geo){const dd=(q.x-mx)**2+((q.y-my)*.6)**2;if(dd<best){best=dd;p=q}}
+    const px=r.left-br.left+p.x*sx,py=r.top-br.top+p.y*sy;
+    ring.style.cssText=`left:${px}px;top:${py}px`;ring.className="pcring "+(p.k==="s"?"s":"m");
+    const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    tip.innerHTML=p.k==="s"?`<b>Venta · ${esc(dateES(p.d))}</b><span><i style="background:#f5c84b"></i>Vendida por <em>${fmt(p.v)}</em></span>${p.t?`<span class="pct">${esc(p.t)}</span>`:""}`
+      :`<b>Precio PriceCharting · ${MESL[+p.d.slice(5,7)-1]} ${p.d.slice(0,4)}</b><span><i style="background:#c6f24e"></i>Precio del mes <em>${fmt(p.v)}</em></span>`;
+    tip.hidden=ring.hidden=false;
+    const tw=tip.offsetWidth,left=px+14+tw>br.width?px-14-tw:px+14;tip.style.left=Math.max(0,left)+"px";tip.style.top=Math.max(0,py-tip.offsetHeight-10)+"px"})}
 // Últimas 3 ventas cerradas de su ficha de PriceCharting (las guarda la revisión diaria, solo en piezas con precio de la guía).
 function salesHTML(it){const l=it.lastSales;
   const none=t=>`<div class="sales"><h4>Últimas ventas</h4><div class="msg">${t}</div></div>`;
@@ -384,7 +415,8 @@ function infoHTML(it){
 
     <div class="card">
       <div class="cardhead"><h3 style="font-size:16px">Tendencia</h3>${tr==null?`<span class="pill flat">sin datos</span>`:pillHTML(tr," · 30 d")}</div>
-      ${h.length?`<div class="dchart">`+lineSVG(h.map(p=>({d:p.d,v:p.v})),{h:130,w:Math.max(300,Math.min(600,$("info").clientWidth-34||600)),id:"gd",color:tr!=null&&tr<-.005?"var(--loss)":"var(--lime)",ticks:5,pad:[10,10,22,58],key:"gd"})+`</div>`:`<div class="msg">Aún no hay historial de precios para esta pieza.</div>`}
+      ${md.pc&&(md.pc.monthly||[]).length?pcChartHTML(md.pc,Math.max(300,Math.min(600,$("info").clientWidth-34||600))):`<div class="msg">${it.source==="guia"&&it.ref?"La tendencia de PriceCharting aparecerá tras la próxima revisión de precios.":"No hay tendencia de PriceCharting para esta pieza: abajo, su historial en la app."}</div>`}
+      ${md.pc&&(md.pc.monthly||[]).length?"":h.length?`<div class="dchart">`+lineSVG(h.map(p=>({d:p.d,v:p.v})),{h:130,w:Math.max(300,Math.min(600,$("info").clientWidth-34||600)),id:"gd",color:tr!=null&&tr<-.005?"var(--loss)":"var(--lime)",ticks:5,pad:[10,10,22,58],key:"gd"})+`</div>`:`<div class="msg">Aún no hay historial de precios para esta pieza.</div>`}
       <div class="stats3">
         <div class="stat"><div class="l">Media 7 días</div><div class="v">${a7?fmt(a7.v):"—"}</div><div class="s">${nAvg(a7)}</div></div>
         <div class="stat"><div class="l">Media 30 días</div><div class="v">${a30?fmt(a30.v):"—"}</div><div class="s">${nAvg(a30)}</div></div>
@@ -460,7 +492,8 @@ function renderStage(){const it=state.items.find(i=>i.id===state.sel);if(!it)ret
 }
 function renderInfo(force){const it=state.items.find(i=>i.id===state.sel);if(!it){closeDetail();return}
   const a=document.activeElement;if(!force&&a&&$("info").contains(a)&&a.tagName==="INPUT")return;
-  $("info").innerHTML=infoHTML(it);const dc=$("info").querySelector(".dchart");if(dc&&CHARTS.gd){dc._chart=CHARTS.gd;chartHover(dc,["Precio"])}}
+  $("info").innerHTML=infoHTML(it);const dc=$("info").querySelector(".dchart");if(dc&&CHARTS.gd){dc._chart=CHARTS.gd;chartHover(dc,["Precio"])}
+  const pcc=$("info").querySelector(".pcchart");if(pcc)pcHover(pcc)}
 function openDetail(id){if(!state.tsel&&$("overlay").hidden)lastFocus=document.activeElement;state.tsel=null;$("dOff").parentElement.hidden=false;state.sel=id;state.dmode=modeFor((state.items.find(i=>i.id===id)||{}).cat);state.flipped=false;state.confirmDel=null;
   $("overlay").hidden=false;document.body.style.overflow="hidden";$("overlay").scrollTop=0;renderStage();renderInfo(true);$("dClose").focus();
   $("dGyro").hidden=!("DeviceOrientationEvent" in window&&matchMedia("(pointer:coarse)").matches);}

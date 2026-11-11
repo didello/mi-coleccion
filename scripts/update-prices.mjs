@@ -15,7 +15,7 @@
 // Opcional: DRY_RUN=1 para ver qué cambiaría sin guardar nada.
 
 import { createClient } from "@supabase/supabase-js";
-import { canSearchGuide, fetchPrices, findGuideUrl, isGame, isPriceGuideUrl, lastSalesFor, priceFor } from "./lib/pricecharting.mjs";
+import { canSearchGuide, fetchPrices, findGuideUrl, guideChartFor, isGame, isPriceGuideUrl, lastSalesFor, priceFor } from "./lib/pricecharting.mjs";
 
 const URL_ = process.env.SUPABASE_URL;
 const KEY = process.env.SUPABASE_SECRET_KEY;
@@ -164,6 +164,7 @@ for (const row of items) {
       m.market = market;
       m.src = m.src || site;
       await save(row.user_id, "media", row.id, m);
+      media.set(key, m);
     }
     // Las vigiladas pasan a la guía solo cuando su precio se parece al puesto a mano.
     const close = v != null && (!watch || (value != null && Math.abs(v - value) <= value * SIMILAR));
@@ -199,11 +200,24 @@ for (const row of items) {
     }
   } else kept++;
 
-  // Últimas ventas de su ficha, solo si el precio sale de la guía (si no, podrían ser de otra versión).
+  // Últimas ventas y gráfica de su ficha (historial mensual + ventas), solo si el precio sale de la guía
+  // (si no, podrían ser de otra versión). La gráfica va en media para no cargar el documento de la pieza.
+  const mkey = `${row.user_id}/${row.id}`;
   if (it.source === "guia" && isPriceGuideUrl(it.ref) && !it.pending) {
     const got = priceCache.has(it.ref) ? await priceCache.get(it.ref) : null;
-    if (got && Object.keys(got).length) it.lastSales = lastSalesFor(it, got);
-  } else delete it.lastSales;
+    if (got && Object.keys(got).length) {
+      it.lastSales = lastSalesFor(it, got);
+      const pc = guideChartFor(it, got), m = { ...(media.get(mkey) || {}) };
+      if (pc) m.pc = { d: today, ...pc };
+      else delete m.pc;
+      await save(row.user_id, "media", row.id, m);
+      media.set(mkey, m);
+    }
+  } else {
+    delete it.lastSales;
+    const m = media.get(mkey);
+    if (m && m.pc) { const { pc, ...rest } = m; await save(row.user_id, "media", row.id, rest); media.set(mkey, rest); }
+  }
 
   it.history = withToday(it.history, value);
   it.updated = today;

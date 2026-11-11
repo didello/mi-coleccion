@@ -624,3 +624,21 @@ a.sale:hover{background:var(--surface-3)}
 .sale .sd{color:var(--muted);white-space:nowrap;font-size:12px}
 .sale .st{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
 .sale .sp{font-family:var(--mono);font-weight:700;white-space:nowrap}
+/* ficha: tendencia de PriceCharting (precio mensual + ventas reales) con detalle al pasar el cursor */
+.pcchart{position:relative;touch-action:pan-y;margin:4px 0 2px}
+.pcchart svg{display:block;width:100%;height:auto}
+.pcchart .gl{stroke:var(--line);stroke-width:1}
+.pcchart .ax{font-size:11px;fill:var(--muted);font-family:var(--mono)}
+.pcchart{--pcl:#c6f24e}
+.pcchart .pa{fill:var(--pcl);opacity:.08}
+.pcchart .pl{fill:none;stroke:var(--pcl);stroke-width:2.4;stroke-linejoin:round}
+.pcchart .pm{fill:var(--pcl)}
+.pcchart .ps{fill:#f5c84b;fill-opacity:.9;stroke:var(--bg);stroke-width:1.2}
+.pcring{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:2px solid #fff;pointer-events:none;box-shadow:0 0 0 3px rgba(0,0,0,.35)}
+.pcring.s{border-color:#f5c84b}.pcring.m{border-color:#c6f24e}
+.pcchart .chtip{white-space:normal;max-width:260px}
+.chtip .pct{display:block;font-size:11.5px;color:var(--muted);line-height:1.3}
+.pclg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin:2px 0 10px}
+.pclg span{display:flex;align-items:center;gap:6px}
+.pclg i{width:9px;height:9px;border-radius:50%}
+.pclg i.pm{background:#c6f24e}.pclg i.ps{background:#f5c84b}
