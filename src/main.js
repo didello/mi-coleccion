@@ -981,10 +981,11 @@ function cabHTML(){
       <button type="button" class="cab-door l" data-door="L" aria-label="Deslizar la puerta izquierda"><span class="cab-pull"></span></button>
       <button type="button" class="cab-door r" data-door="R" aria-label="Deslizar la puerta derecha"><span class="cab-pull"></span></button></div>
     <div class="cab-base"></div><div class="cab-legs" aria-hidden="true"><i></i><i></i></div></div>`}
-// Tocar el cristal abre ese lado: su puerta se corre sobre la otra. Con teclado, cada puerta se abre o se cierra.
+// Con la vitrina cerrada, tocar el cristal abre ese lado: su puerta se corre sobre la otra.
+// Con un lado abierto, tocar cualquiera de las puertas la vuelve a cerrar. Con teclado, igual (Enter sobre una puerta).
 function cabDoor(btn,e){const cab=btn.closest(".cab"),r=cab.getBoundingClientRect();
   const side=e.detail===0?btn.dataset.door:(e.clientX<r.left+r.width/2?"L":"R");
-  CAB.open=e.detail===0&&CAB.open===side?null:side;cab.dataset.open=CAB.open||""}
+  CAB.open=CAB.open?null:side;cab.dataset.open=CAB.open||""}
 function cabPull(btn){const id=btn.dataset.varios;if(reduce||!btn.animate){openDetail(id);return}
   btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 function gamePull(btn){const id=btn.dataset.game;if(reduce||!btn.animate){openDetail(id);return}
