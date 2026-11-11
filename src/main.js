@@ -317,9 +317,14 @@ function pcChartHTML(pc,w){
   if(L.length>1)g+=`<path d="M${pts.join(" L")} L${x(L.at(-1)[0])},${y(0)} L${x(L[0][0])},${y(0)}Z" class="pa"/><polyline points="${pts.join(" ")}" class="pl"/>`;
   const geo=[];L.forEach(p=>{g+=`<circle cx="${x(p[0])}" cy="${y(p[1])}" r="2.6" class="pm"/>`;geo.push({x:x(p[0]),y:y(p[1]),k:"m",d:p[0],v:p[1]})});
   S.forEach(s=>{g+=`<circle cx="${x(s.d)}" cy="${y(s.p)}" r="4.3" class="ps"/>`;geo.push({x:x(s.d),y:y(s.p),k:"s",d:s.d,v:s.p,t:s.t})});
-  CHARTS.pc={w,h,geo};
+  CHARTS.pc={w,h,geo,monthly:pc.monthly};
   return `<div class="pcchart"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Precio mensual de PriceCharting y ventas reales del último año">${g}</svg></div>
     <div class="pclg"><span><i class="pm"></i>Precio mensual (PriceCharting)</span><span><i class="ps"></i>Venta real</span></div>`}
+// Precio de la línea de tendencia en una fecha: entre dos meses, la parte proporcional de cada uno.
+function trendAt(monthly,d){if(!monthly||!monthly.length)return null;const T=x=>+new Date(x+"T12:00:00"),t=T(d);
+  if(t<=T(monthly[0][0]))return monthly[0][1];
+  for(let i=1;i<monthly.length;i++){const [d1,v1]=monthly[i];if(t<=T(d1)){const [d0,v0]=monthly[i-1],f=(t-T(d0))/(T(d1)-T(d0));return v0+(v1-v0)*f}}
+  return monthly.at(-1)[1]}
 function pcHover(box){
   const tip=document.createElement("div"),ring=document.createElement("i");tip.className="chtip";ring.className="pcring";
   const hide=()=>{tip.hidden=ring.hidden=true};hide();box.append(ring,tip);box.addEventListener("pointerleave",hide);
@@ -329,7 +334,8 @@ function pcHover(box){
     const px=r.left-br.left+p.x*sx,py=r.top-br.top+p.y*sy;
     ring.style.cssText=`left:${px}px;top:${py}px`;ring.className="pcring "+(p.k==="s"?"s":"m");
     const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-    tip.innerHTML=p.k==="s"?`<b>Venta · ${esc(dateES(p.d))}</b><span><i style="background:#34d26b"></i>Vendida por <em>${fmt(p.v)}</em></span>${p.t?`<span class="pct">${esc(p.t)}</span>`:""}`
+    const tv=p.k==="s"?trendAt(c.monthly,p.d):null,dv=tv?p.v-tv:null;
+    tip.innerHTML=p.k==="s"?`<b>Venta · ${esc(dateES(p.d))}</b><span><i style="background:#34d26b"></i>Vendida por <em>${fmt(p.v)}</em></span>${tv?`<span><i style="background:#f5c84b"></i>Tendencia ese día <em>${fmt(tv)}</em></span><span class="${dv>=0?"pos":"neg"}">${dv>=0?"+":"−"}${fmt(Math.abs(dv))} · ${pct(dv/tv)} ${dv>=0?"por encima":"por debajo"}</span>`:""}${p.t?`<span class="pct">${esc(p.t)}</span>`:""}`
       :`<b>Precio PriceCharting · ${MESL[+p.d.slice(5,7)-1]} ${p.d.slice(0,4)}</b><span><i style="background:#f5c84b"></i>Precio del mes <em>${fmt(p.v)}</em></span>`;
     tip.hidden=ring.hidden=false;
     const tw=tip.offsetWidth,left=px+14+tw>br.width?px-14-tw:px+14;tip.style.left=Math.max(0,left)+"px";tip.style.top=Math.max(0,py-tip.offsetHeight-10)+"px"})}
