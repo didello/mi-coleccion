@@ -15,14 +15,14 @@ function code128(text) {
   const check = (104 + vals.reduce((s, v, i) => s + v * (i + 1), 0)) % 103;
   return [104, ...vals, check, 106].map((v) => C128[v]).join(""); // anchos alternos barra/espacio
 }
-function drawBarcode(ctx, text, x, y, w, h, color = INK) {
+export function drawBarcode(ctx, text, x, y, w, h, color = INK) {
   const widths = [...code128(text)].map(Number), total = widths.reduce((a, b) => a + b, 0), u = w / total;
   let cx = x;
   widths.forEach((bw, i) => { if (i % 2 === 0) { ctx.fillStyle = color; ctx.fillRect(cx, y, bw * u, h); } cx += bw * u; });
 }
 
 // Texto en una línea que encoge hasta caber en el ancho.
-function fitText(ctx, text, x, y, maxW, size, weight = 400, align = "left") {
+export function fitText(ctx, text, x, y, maxW, size, weight = 400, align = "left") {
   let s = size;
   do { ctx.font = `${weight} ${s}px ${FONT}`; s -= 1; } while (ctx.measureText(text).width > maxW && s > 10);
   ctx.textAlign = align;
@@ -102,14 +102,14 @@ function roundedClip(x, w, h, r) {
   x.beginPath(); x.moveTo(r, 0); x.arcTo(w, 0, w, h, r); x.arcTo(w, h, 0, h, r); x.arcTo(0, h, 0, 0, r); x.arcTo(0, 0, w, 0, r); x.closePath(); x.clip();
 }
 // Carta: una URL, o una celda de una hoja de sprites de 10 × 10 ({sheet, cell, rot}).
-export async function cardFace(src) {
+export async function cardFace(src, CARD_W = 630, CARD_H = 880, radio = 26) {
   const c = document.createElement("canvas"); c.width = CARD_W; c.height = CARD_H;
   const x = c.getContext("2d");
   x.fillStyle = "#16181c"; x.fillRect(0, 0, CARD_W, CARD_H);
   if (!src) return c;
   try {
     const img = await loadImg(src.sheet || src.url);
-    x.save(); roundedClip(x, CARD_W, CARD_H, 26);
+    x.save(); roundedClip(x, CARD_W, CARD_H, radio);
     if (src.sheet) {
       const cw = img.naturalWidth / 10, ch = img.naturalHeight / 10, cell = +src.cell, sx = (cell % 10) * cw, sy = Math.floor(cell / 10) * ch;
       if (src.rot) { x.translate(CARD_W, 0); x.rotate(Math.PI / 2); x.drawImage(img, sx, sy, cw, ch, 0, 0, CARD_H, CARD_W); }

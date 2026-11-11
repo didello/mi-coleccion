@@ -38,7 +38,7 @@ const MODELS3D=[
   // ETB Pokémon Center 30th: misma cámara que las UPC, así sale a escala real (más pequeña) y bajada hasta la balda.
   {re:/(elite[\s-]*trainer[\s-]*box|\betb\b).*30th|30th.*(elite[\s-]*trainer[\s-]*box|\betb\b)/i,src:"modelos/etb-30th.glb",orbit:"-22deg 82deg 0.664m",big:"-25deg 76deg auto",ar:1.2,h:1.2,b:.225}];
 // Versión de los modelos: súbela al regenerar un .glb, porque la app los guarda en caché y si no seguiría mostrando el viejo.
-const MODELS_V="14";
+const MODELS_V="15";
 const modelUrl=f=>import.meta.env.BASE_URL+f+"?v="+MODELS_V;
 function model3d(it){const m=MODELS3D.find(m=>m.re.test(it.name||""));return m?{...m,url:modelUrl(m.src)}:null}
 let mvLoad=null;const needMV=()=>mvLoad||(mvLoad=import("@google/model-viewer").catch(e=>{mvLoad=null;console.error(e)}));
@@ -375,7 +375,19 @@ function slabData(it){const g=gradeParts(it.grade),[n1,...n2]=String(it.name||""
       left:[it.set,n1,[n2.join(" – "),it.serial].filter(Boolean).join(" ")].map(t=>String(t||"").toUpperCase()),
       right:[num,GDESC[g.num]||"",g.num||it.grade||""]},
     card,back:it.cat==="pokemon"?modelUrl("modelos/dorso-pokemon.jpg"):it.cat==="dragonball"?modelUrl("modelos/dorso-dragonball.jpg"):{title:CATS[it.cat]||"Carta"}}}
+// Caja 3D de los juegos de PS1: misma carcasa para todos (src/caja3d.js). Los juegos con escaneos de su caja
+// (blender/juego-ps1) tienen aquí su portada, trasera y lomos reales; el resto usa su imagen y una trasera genérica.
+const CAJA_URL=modelUrl("modelos/caja-ps1.glb");
+const JUEGOS3D=[{re:/fifa\s*(soccer\s*)?2004/i,id:"fifa-2004",titulo:"FIFA Soccer 2004",editora:"Electronic Arts",codigo:"SLUS-01578",upc:"014633146707"}];
+const isPS1=it=>isGame(it)&&(platOf(it)||"PS1")==="PS1";
+function cajaData(it){const J=JUEGOS3D.find(j=>j.re.test(it.name||""))||{};
+  const p=pick(it,state.dmode),s=p&&String(p.src);
+  const img=!s?null:s.startsWith("sp:")?(([,sh,c,r])=>({sheet:catalogUrl(sh),cell:c,rot:r==="1"}))(s.split(":")):{url:s};
+  const f=n=>modelUrl("modelos/juegos/"+J.id+"-"+n+".jpg");
+  return{titulo:J.titulo||it.name||"",editora:J.editora||"",codigo:J.codigo||it.code||"",upc:J.upc||"",
+    portada:J.id?f("portada"):img,trasera:J.id?f("trasera"):null,lomo:J.id?f("lomo"):null,lomoDerecho:J.id?f("lomo-derecho"):null}}
 function stageHTML(it){
+  if(isPS1(it))return `<div class="m3d-stage">${mvHTML(CAJA_URL,it.name+" en su caja, en 3D","m3d-big",`camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="16deg" camera-orbit="-25deg 80deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`)}<div class="msg m3d-hint">Arrastra para girarla y ver la trasera y los lomos · pellizca o usa la rueda para acercarte</div></div>`;
   if(isGraded(it))return `<div class="m3d-stage">${mvHTML(SLAB_URL,it.name+" en su slab, en 3D","m3d-big m3d-slab",`field-of-view="25deg" camera-controls auto-rotate auto-rotate-delay="4000" rotation-per-second="16deg" camera-orbit="0deg 90deg auto" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`,import.meta.env.BASE_URL+"modelos/estudio.hdr","0.85")}<div class="msg m3d-hint">Arrastra para girarlo y ver la etiqueta de detrás · pellizca o usa la rueda para acercarte</div></div>`;
   const m3=model3d(it);
   if(m3)return `<div class="m3d-stage">${mvHTML(m3.url,it.name+" en 3D","m3d-big",`camera-controls auto-rotate auto-rotate-delay="2500" rotation-per-second="18deg" camera-orbit="${m3.big}" min-camera-orbit="auto 0deg auto" max-camera-orbit="auto 180deg auto" disable-pan shadow-intensity="1" shadow-softness="0.9" touch-action="pan-y"`)}<div class="msg m3d-hint">Arrastra para girarla · pellizca o usa la rueda para acercarte</div></div>`;
@@ -489,7 +501,9 @@ function renderStage(){const it=state.items.find(i=>i.id===state.sel);if(!it)ret
   $("dOff").disabled=!s.off;$("dMine").disabled=!s.mine;
   $("dPhoto").hidden=!assets;$("dPhoto").textContent=it.photo?"Cambiar mi foto":"Subir mi foto";
   const md=state.media[it.id]||{};
-  $("stage").parentElement.classList.toggle("is3d",!!model3d(it)||isGraded(it));
+  $("stage").parentElement.classList.toggle("is3d",!!model3d(it)||isGraded(it)||isPS1(it));
+  if(isPS1(it)){const mv=$("stage").querySelector("model-viewer");needMV().then(()=>import("./caja3d.js")).then(m=>m.dressCase(mv,cajaData(it))).catch(e=>console.error(e));
+    if(JUEGOS3D.some(j=>j.re.test(it.name||""))){$("dOff").parentElement.hidden=true;$("imgsrc").textContent="Caja 3D hecha a partir de las fotos del juego";return}}
   if(isGraded(it)){const mv=$("stage").querySelector("model-viewer");needMV().then(()=>import("./slab3d.js")).then(m=>m.dressSlab(mv,slabData(it))).catch(e=>console.error(e))}
   if(model3d(it)){$("dOff").parentElement.hidden=true;$("imgsrc").textContent="Modelo 3D hecho a partir de las fotos de la caja";return}
   $("dOff").parentElement.hidden=false;

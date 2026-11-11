@@ -19,6 +19,7 @@ export async function startDemo(startApp) {
   if (new URLSearchParams(location.search).has("3d")) {
     data.get("items").set("demo-jukebox", { cat: "otro", kind: "Otro", name: "Gameboy Juke box", value: 70, paid: 70, qty: 1, source: "manual", history: [] });
     data.get("items").set("demo-upc30", { cat: "pokemon", kind: "Sellado", name: "UPC Pokemon 30th Anniversary (Umbreon)", value: 419, paid: 300, qty: 1, source: "guia", history: [] });
+    data.get("items").set("demo-fifa2004", { cat: "videojuegos", kind: "Videojuego", name: "FIFA Soccer 2004", set: "PS1", value: 12, paid: 8, qty: 1, source: "guia", history: [] });
   }
   const listeners = new Map();
   const col = (c) => data.get(c) || data.set(c, new Map()).get(c);
