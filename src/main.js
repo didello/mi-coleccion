@@ -965,17 +965,31 @@ const PLATNAME={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PlayStation 3",PS4:"P
 const PLATBAND={PS1:"PlayStation",PS2:"PlayStation 2",PS3:"PS3",PS4:"PS4",PS5:"PS5",PSP:"PSP",VITA:"PS Vita"}; // franja de arriba de la caja
 // Orden: de la consola más nueva a la más antigua.
 const RACK_GROUPS=[["PS5",["PS5"]],["PS4",["PS4"]],["PS3",["PS3"]],["PS2",["PS2"]],["Portátiles",["PSP","VITA"]],["Clásicos",["PS1"]]];
+/* Huecos de los muebles: cada balda tiene un número fijo de huecos y cada pieza guarda el suyo en «slot».
+   Las que aún no tienen hueco (o chocan con otra) ocupan los primeros libres, en el orden de siempre.
+   Siempre queda al menos un hueco libre para poder mover piezas. */
+const COLS={cab:3,rack:4};
+function slotLayout(list,cols){const pos=new Map(),taken=new Set();
+  for(const it of list){const s=it.slot;if(Number.isInteger(s)&&s>=0&&s<500&&!taken.has(s)){pos.set(it.id,s);taken.add(s)}}
+  let f=0;for(const it of list)if(!pos.has(it.id)){while(taken.has(f))f++;pos.set(it.id,f);taken.add(f)}
+  const max=taken.size?Math.max(...taken):-1;
+  const total=Math.max(Math.ceil((max+1)/cols),Math.ceil((list.length+1)/cols),1)*cols;
+  const bySlot=new Array(total).fill(null);for(const it of list)bySlot[pos.get(it.id)]=it;
+  return bySlot}
+// Las piezas que oculta la búsqueda dejan su hueco ocupado (no se puede soltar ahí).
+const slotHTML=(cls,s,it,shown,inner)=>`<div class="${cls}${it?"":" slot-free"}${it&&!shown.has(it.id)?" busy":""}" data-slot="${s}">${it&&shown.has(it.id)?inner(it):""}</div>`;
 function rackHTML(){
-  const games=visible(GAMECAT),{n,v}=catTotals(games);
+  const games=visible(GAMECAT),{n,v}=catTotals(games),shown=new Set(games.map(i=>i.id));
+  const gi=it=>{const p=platOf(it)||"PS1";return RACK_GROUPS.findIndex(([,ps])=>ps.includes(p))};
+  const all=state.items.filter(i=>!i.pending&&i.cat===GAMECAT).sort((a,b)=>gi(a)-gi(b));
   const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1;
-    return `<div class="gslot"><button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor">
+    return `<button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor. Arrástralo para cambiarlo de hueco">
       <span class="g-side"></span><span class="g-band">${PLATBAND[p]}</span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>
-      </button><span class="g-price" aria-hidden="true">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></div>`};
-  const groups=RACK_GROUPS.map(([t,ps])=>{const g=games.filter(i=>ps.includes(platOf(i)||"PS1"));
-    return g.map(box).join("")}).join("");
+      </button><span class="g-price" aria-hidden="true">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span>`};
+  const slots=all.length?slotLayout(all,COLS.rack).map((it,s)=>slotHTML("gslot",s,it,shown,box)).join(""):"";
   return `<div class="rack">
     <div class="rk-top"><span class="rk-logo" role="img" aria-label="PlayStation">${psSVG(PS_SYM,"rk-sym")}${psSVG(PS_WORD,"rk-word")}</span>${n?`<span class="rk-sub">${n} juego${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
-    <div class="rk-box"><div class="rk-body rk-row">${groups||`<div class="msg rk-empty">Aquí irán tus juegos</div>`}</div></div>
+    <div class="rk-box"><div class="rk-body rk-row${slots?"":" none"}" data-grid="rack">${slots||`<div class="msg rk-empty">Aquí irán tus juegos</div>`}</div></div>
     <div class="rk-plinth" aria-hidden="true"><i class="tri"></i><i class="cir"></i><i class="crs"></i><i class="sqr"></i></div></div>`}
 // Neón en tres capas del mismo dibujo: halo corto (ng), tubo de color (nb) y núcleo claro (nc).
 const psSVG=(l,cls)=>`<svg class="${cls}" viewBox="${l.vb}" aria-hidden="true"><g class="ng">${l.g}</g><g class="nb">${l.g}</g><g class="nc">${l.g}</g></svg>`;
@@ -984,14 +998,20 @@ const CAB={open:null}; // "L" | "R": la puerta que está corrida
 // Cada tipo va en sus propias baldas, en este orden; uno nuevo empieza balda aunque queden huecos en la anterior.
 const CAB_TYPES=[["sellado","Sellados"],["arte","Láminas"],["vhs","VHS"],["otro","Otros"]];
 const cabType=it=>isSealed(it)?"sellado":it.cat==="arte"?"arte":it.cat==="vhs"?"vhs":"otro";
+// En la vitrina todas las piezas 3D usan la misma cámara (misma distancia y lente): así salen a escala real
+// entre ellas, apoyadas en la balda y dentro de su hueco. De cada modelo solo se toma el ángulo.
+const CAB_CAM='field-of-view="30deg" camera-target="0m 0.165m 0m"';
 function cabHTML(){
-  const l=visible("all").filter(isVarios),{n,v}=catTotals(l);
-  const item=it=>{const q=it.qty||1,m3=model3d(it);return `<div class="cslot"><button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina">
-    <span class="ci-pic">${m3?mvHTML(m3.url,it.name,"ci-3d",`camera-orbit="${m3.orbit}" field-of-view="24deg" disable-zoom disable-tap tabindex="-1" style="--ar:${m3.ar};--h:${m3.h};--b:${m3.b}"`):imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button></div>`};
+  const l=visible("all").filter(isVarios),{n,v}=catTotals(l),shown=new Set(l.map(i=>i.id));
+  const ti=it=>CAB_TYPES.findIndex(([k])=>k===cabType(it));
+  const all=state.items.filter(isVarios).sort((a,b)=>ti(a)-ti(b));
+  const item=it=>{const q=it.qty||1,m3=model3d(it),ang=m3?m3.orbit.split(/\s+/).slice(0,2).join(" "):"";return `<button type="button" class="citem${it.cat==="arte"?" art":""}" data-varios="${esc(it.id)}" aria-label="${esc(it.name)}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar de la vitrina. Arrástralo para cambiarlo de hueco">
+    <span class="ci-pic">${m3?mvHTML(m3.url,it.name,"ci-3d",`camera-orbit="${ang} 0.66m" ${CAB_CAM} disable-zoom disable-tap tabindex="-1"`):imgHTML(it,modeFor(it.cat),false)}</span><span class="ci-tag">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span></button>`};
+  const slots=all.length?slotLayout(all,COLS.cab).map((it,s)=>slotHTML("cslot",s,it,shown,item)).join(""):"";
   return `<div class="cab" data-open="${CAB.open||""}">
     <div class="cab-top"><span class="cab-plate">Varios</span>${n?`<span class="cab-sub">${n} pieza${n===1?"":"s"} · ${fmt0(v)}</span>`:""}</div>
     <div class="cab-box"><div class="cab-led" aria-hidden="true"></div>
-      <div class="cab-body">${l.length?CAB_TYPES.map(([k,t])=>{const g=l.filter(i=>cabType(i)===k);return g.length?`<section class="cab-group" aria-label="${t}"><span class="cab-lbl"><b>${t}</b></span><div class="cab-row">${g.map(item).join("")}</div></section>`:""}).join(""):'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
+      <div class="cab-body${slots?"":" none"}" data-grid="cab">${slots||'<div class="msg cab-empty">Aquí irán tus cajas selladas, láminas y otras piezas</div>'}</div>
       <button type="button" class="cab-door l" data-door="L" aria-label="Deslizar la puerta izquierda"><span class="cab-pull"></span></button>
       <button type="button" class="cab-door r" data-door="R" aria-label="Deslizar la puerta derecha"><span class="cab-pull"></span></button></div>
     <div class="cab-base"></div><div class="cab-legs" aria-hidden="true"><i></i><i></i></div></div>`}
@@ -1004,6 +1024,56 @@ function cabPull(btn){const id=btn.dataset.varios;if(reduce||!btn.animate){openD
   btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 function gamePull(btn){const id=btn.dataset.game;if(reduce||!btn.animate){openDetail(id);return}
   btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
+
+/* Mover piezas de hueco en los muebles: con el ratón, se agarra y se suelta en otro hueco; en el móvil,
+   mantener pulsado medio segundo y arrastrar. Si el hueco está ocupado, se intercambian. */
+const DRAG={on:false,block:false};
+function dragStart(){const d=DRAG,r=d.btn.getBoundingClientRect();d.on=true;
+  const g=d.btn.cloneNode(true);const mv=d.btn.querySelector("model-viewer");
+  if(mv){const gm=g.querySelector("model-viewer"),img=new Image();try{img.src=mv.toDataURL("image/png")}catch(e){}img.className="ci-3d-img";gm.replaceWith(img)}
+  g.classList.add("drag-ghost");g.removeAttribute("data-varios");g.removeAttribute("data-game");
+  Object.assign(g.style,{width:r.width+"px",height:r.height+"px",left:r.left+"px",top:r.top+"px"});g.style.setProperty("--ih",r.height+"px");
+  d.dx=d.x-r.left;d.dy=d.y-r.top;d.ghost=g;document.body.append(g);
+  d.btn.closest("[data-slot]").classList.add("lifted");d.grid.classList.add("dragging");
+  if(navigator.vibrate)try{navigator.vibrate(12)}catch(e){}}
+function dragTarget(x,y){for(const s of DRAG.grid.querySelectorAll("[data-slot]")){const r=s.getBoundingClientRect();
+  if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return s.classList.contains("busy")?null:s}return null}
+function dragMove(e){const d=DRAG;if(!d.btn||e.pointerId!==d.id)return;
+  if(!d.on){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>(d.touch?10:6)){if(d.touch){dragEnd();return}dragStart()}else return}
+  e.preventDefault();d.ghost.style.left=e.clientX-d.dx+"px";d.ghost.style.top=e.clientY-d.dy+"px";
+  const t=dragTarget(e.clientX,e.clientY);d.grid.querySelectorAll(".drop").forEach(s=>s!==t&&s.classList.remove("drop"));if(t)t.classList.add("drop");
+  // Cerca del borde de la pantalla, la página se desplaza sola.
+  if(e.clientY<70)scrollBy(0,-12);else if(e.clientY>innerHeight-70)scrollBy(0,12)}
+function dragEnd(e){const d=DRAG;clearTimeout(d.t);
+  if(d.on){const from=+d.btn.closest("[data-slot]").dataset.slot,t=e&&e.type==="pointerup"?dragTarget(e.clientX,e.clientY):null;
+    d.ghost.remove();d.grid.classList.remove("dragging");d.grid.querySelectorAll(".lifted,.drop").forEach(s=>s.classList.remove("lifted","drop"));
+    DRAG.block=true;setTimeout(()=>DRAG.block=false,60);
+    if(t&&+t.dataset.slot!==from)moveSlot(d.grid.dataset.grid,d.btn.dataset.varios||d.btn.dataset.game,+t.dataset.slot)}
+  Object.assign(DRAG,{on:false,btn:null,ghost:null,grid:null})}
+// Coloca la pieza en el hueco y, si estaba ocupado, la otra pasa al que deja libre. Guarda los huecos de
+// todas las piezas del mueble, para que no se muevan solas cuando entren piezas nuevas.
+async function moveSlot(grid,id,to){
+  const isCab=grid==="cab",list=isCab?state.items.filter(isVarios):state.items.filter(i=>!i.pending&&i.cat===GAMECAT);
+  const sorted=isCab?list.sort((a,b)=>CAB_TYPES.findIndex(([k])=>k===cabType(a))-CAB_TYPES.findIndex(([k])=>k===cabType(b)))
+    :list.sort((a,b)=>RACK_GROUPS.findIndex(([,ps])=>ps.includes(platOf(a)||"PS1"))-RACK_GROUPS.findIndex(([,ps])=>ps.includes(platOf(b)||"PS1")));
+  const bySlot=slotLayout(sorted,COLS[grid]),pos=new Map();bySlot.forEach((it,s)=>it&&pos.set(it.id,s));
+  const from=pos.get(id),other=bySlot[to];pos.set(id,to);if(other)pos.set(other.id,from);
+  const changes=sorted.filter(it=>it.slot!==pos.get(it.id));
+  for(const it of changes)it.slot=pos.get(it.id); // se ve al momento; la base de datos confirma después
+  renderGrid();
+  if(!db)return;
+  try{await Promise.all(changes.map(it=>db.doc("items/"+it.id).update({slot:it.slot})))}catch(e){toast("No se pudo guardar el cambio de hueco")}}
+$("calbum").addEventListener("pointerdown",e=>{
+  const btn=e.target.closest(".citem[data-varios],.gcase[data-game]");if(!btn||e.button>0||DRAG.btn)return;
+  const grid=btn.closest("[data-grid]");if(!grid)return;
+  Object.assign(DRAG,{btn,grid,id:e.pointerId,x:e.clientX,y:e.clientY,touch:e.pointerType!=="mouse",on:false});
+  // En pantallas táctiles el arrastre empieza al mantener pulsado (si no, se desplaza la página como siempre).
+  if(DRAG.touch)DRAG.t=setTimeout(()=>{if(DRAG.btn===btn&&!DRAG.on)dragStart()},450)});
+addEventListener("pointermove",dragMove,{passive:false});
+addEventListener("pointerup",dragEnd);addEventListener("pointercancel",dragEnd);
+addEventListener("touchmove",e=>{if(DRAG.on)e.preventDefault()},{passive:false});
+$("calbum").addEventListener("dragstart",e=>{if(e.target.closest("[data-grid]"))e.preventDefault()});
+$("calbum").addEventListener("contextmenu",e=>{if(DRAG.on||DRAG.t&&DRAG.btn)e.preventDefault()});
 function frameViewHTML(cat){CA.cat=cat;
   return `<div class="album calb fview" style="--cc:${CATVAR[cat]||"var(--c-otro)"}">
     <div class="calhead"><button type="button" class="ghost" data-cclose>‹ Pared</button><div class="fv-plate">${plateHTML(cat)}</div><span></span></div>
@@ -1033,6 +1103,7 @@ function closeAlbum(){const cat=state.filter;state.filter="all";savePref("mc.fil
   const f=document.querySelector(`.wframe[data-album="${cat}"]`);if(f){const r=f.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)window.scrollTo({top:r.top+scrollY-innerHeight/4,behavior:"instant"})}}
 
 $("calbum").addEventListener("click",e=>{
+  if(DRAG.block){DRAG.block=false;return} // el clic que llega al soltar una pieza arrastrada
   const a=e.target.closest("[data-album]");if(a){openAlbum(a.dataset.album);return}
   const gm=e.target.closest("[data-game]");if(gm){gamePull(gm);return}
   const dr=e.target.closest("[data-door]");if(dr){cabDoor(dr,e);return}

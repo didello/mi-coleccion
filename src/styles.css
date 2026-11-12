@@ -642,3 +642,32 @@ a.sale:hover{background:var(--surface-3)}
 .pclg span{display:flex;align-items:center;gap:6px}
 .pclg i{width:9px;height:9px;border-radius:50%}
 .pclg i.pm{background:#f5c84b}.pclg i.ps{background:#34d26b}
+/* Muebles con huecos fijos: 3 por balda en Varios y 4 en el expositor de PlayStation. Cada hueco dibuja su
+   tramo de balda, así que las baldas son continuas y ninguna pieza se sale de su sitio. */
+.cab-body{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));min-height:0}
+.cab-body.none{display:flex}
+.cab-body .cslot{position:relative;display:flex;align-items:flex-end;justify-content:center;height:auto;aspect-ratio:1.35;padding:20px 6px 10px;min-width:0}
+.cab-body .cslot::after{content:"";position:absolute;left:-10px;right:-10px;bottom:0;height:10px;background:linear-gradient(180deg,rgba(240,250,255,.6) 0 1px,rgba(195,230,250,.2) 1px);pointer-events:none}
+.cab-body .cslot:nth-child(3n+1)::after{left:-22px}.cab-body .cslot:nth-child(3n)::after{right:-22px}
+.cab-body .citem{display:flex;width:100%;height:100%;align-items:flex-end;justify-content:center}
+.cab-body .ci-pic{width:100%;height:100%;align-items:flex-end;justify-content:center}
+.cab-body .ci-pic img{height:auto;width:auto;max-height:80%;max-width:94%}
+.cab-body .ci-pic .ph{height:72%}
+.cab-body .ci-3d{width:100%;height:100%;margin:0;aspect-ratio:auto}
+.rk-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:0}
+.rk-row.none{display:flex}
+.rk-row .gslot{min-width:0;justify-content:center;padding:26px 3px 13px}
+.rk-row .gcase{height:auto;width:min(calc(var(--ih) * .8),100%);aspect-ratio:.8}
+/* arrastrar: la pieza agarrada se queda como hueco tenue y los huecos libres se marcan */
+.citem,.gcase{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.dragging .citem,.dragging .gcase{cursor:grabbing}
+[data-grid] .lifted>button{opacity:.22;transform:none!important}
+.dragging .slot-free::before,.dragging .drop::before{content:"";position:absolute;inset:18px 6px 12px;border:1px dashed rgba(255,220,160,.3);border-radius:8px;pointer-events:none}
+.dragging .drop::before{border:2px dashed rgba(255,214,150,.85);background:rgba(255,200,120,.1)}
+.rk-row.dragging .drop::before{border-color:rgba(130,190,255,.9);background:rgba(61,155,255,.12)}
+.drag-ghost{position:fixed;z-index:9999;margin:0;pointer-events:none;transform:scale(1.08) rotate(-2deg);filter:drop-shadow(0 18px 18px rgba(0,0,0,.6));transition:none}
+.drag-ghost .ci-tag,.drag-ghost~.g-price{display:none}
+.drag-ghost .ci-pic{display:flex;width:100%;height:100%;align-items:flex-end;justify-content:center}
+.drag-ghost .ci-3d-img{width:100%;height:100%;object-fit:contain}
+.drag-ghost .ci-pic img{max-height:80%;max-width:94%}
+@media (max-width:520px){.cab-body .cslot{padding:16px 3px 9px}.cab-body .cslot:nth-child(3n+1)::after{left:-12px}.cab-body .cslot:nth-child(3n)::after{right:-12px}.rk-row .gslot{padding:22px 2px 12px}}
