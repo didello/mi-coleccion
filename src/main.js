@@ -982,9 +982,10 @@ function rackHTML(){
   const games=visible(GAMECAT),{n,v}=catTotals(games),shown=new Set(games.map(i=>i.id));
   const gi=it=>{const p=platOf(it)||"PS1";return RACK_GROUPS.findIndex(([,ps])=>ps.includes(p))};
   const all=state.items.filter(i=>!i.pending&&i.cat===GAMECAT).sort((a,b)=>gi(a)-gi(b));
-  const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1;
-    return `<button type="button" class="gcase plat-${p.toLowerCase()}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor. Arrástralo para cambiarlo de hueco">
-      <span class="g-side"></span><span class="g-band">${PLATBAND[p]}</span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>
+  // Los de PS1 salen con la misma caja 3D que en la ficha (quieta, de frente y un poco girada); el resto, con la caja dibujada.
+  const box=it=>{const p=platOf(it)||"PS1",q=it.qty||1,c3=isPS1(it);
+    return `<button type="button" class="gcase plat-${p.toLowerCase()}${c3?" g3d":""}" data-game="${esc(it.id)}" aria-label="${esc(it.name)}, ${PLATNAME[p]}, ${it.value==null?"sin valor":fmt0(it.value*q)}. Sacar del expositor. Arrástralo para cambiarlo de hueco">
+      ${c3?`<span class="g-3d">${mvHTML(CAJA_URL,it.name+" en su caja","gc-3d",`data-caja="${esc(it.id)}" camera-orbit="-25deg 80deg 0.5m" field-of-view="17deg" disable-zoom disable-tap tabindex="-1"`)}</span>`:`<span class="g-side"></span><span class="g-band">${PLATBAND[p]}</span><span class="g-cover">${imgHTML(it,modeFor(GAMECAT),false)}</span><span class="g-gloss"></span>`}
       </button><span class="g-price" aria-hidden="true">${it.value==null?"—":fmt0(it.value*q)}${q>1?` ×${q}`:""}</span>`};
   const slots=all.length?slotLayout(all,COLS.rack).map((it,s)=>slotHTML("gslot",s,it,shown,box)).join(""):"";
   return `<div class="rack">
@@ -1093,7 +1094,10 @@ function renderAlbumEvo(cat){if(!$("aevoChart"))return;
   if(pts.length>1){const d=last.value-first.value;chg.textContent=(d>=0?"+":"−")+fmt0(Math.abs(d))+" · "+pct(first.value?d/first.value:0);chg.className="v "+(d>=0?"pos":"neg")}else{chg.textContent="—";chg.className="v"}
   const mv=items.map(it=>({it,r:trendOf(it,state.range)})).filter(x=>x.r!=null&&Math.abs(x.r)>=.0005).sort((a,b)=>Math.abs(b.r)-Math.abs(a.r)).slice(0,5);
   $("aevoMovers").innerHTML=mv.length?mv.map(({it,r})=>`<button type="button" class="mover" data-mid="${esc(it.id)}">${pick(it,modeFor(it.cat))?srcHTML(pick(it,modeFor(it.cat)).src,""," loading=\"lazy\""):phHTML(it)}<div style="min-width:0"><div class="nm">${esc(it.name)}</div><div class="sb">${esc(it.grade||it.kind||"")} · ${fmt(it.value)}</div></div>${pillHTML(r)}</button>`).join(""):`<div class="msg">Ningún precio ha cambiado en este periodo.</div>`}
-function frameAfter(){renderAlbumEvo(CA.cat);if(state.sel){const p=document.querySelector(`#calbum [data-slab="${state.sel}"]`);if(p)p.classList.add("out")}}
+// Viste las cajas 3D de PS1 de la estantería con la portada, la trasera y los lomos de cada juego.
+function dressRack(){const l=document.querySelectorAll("#calbum model-viewer[data-caja]");if(!l.length)return;
+  needMV().then(()=>import("./caja3d.js")).then(m=>l.forEach(mv=>{const it=state.items.find(i=>i.id===mv.dataset.caja);if(it)m.dressCase(mv,cajaData(it)).catch(e=>console.error(e))})).catch(e=>console.error(e))}
+function frameAfter(){dressRack();renderAlbumEvo(CA.cat);if(state.sel){const p=document.querySelector(`#calbum [data-slab="${state.sel}"]`);if(p)p.classList.add("out")}}
 function slabPull(btn){const id=btn.dataset.slab;if(reduce||!btn.animate){openDetail(id);return}btn.classList.add("out");setTimeout(()=>openDetail(id),380)}
 // Abrir y cerrar un marco: el contenido cambia con un fundido suave.
 function fadeIn(o){if(!reduce&&$("calbum").animate)$("calbum").animate([{opacity:0,transform:o?"scale(.97)":"none"},{opacity:1,transform:"none"}],{duration:o?380:280,easing:"ease-out"})}
