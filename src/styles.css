@@ -705,3 +705,5 @@ a.sale:hover{background:var(--surface-3)}
 .g-price{bottom:-7px!important;left:50%!important;transform:translateX(-50%)!important;border-radius:0 0 3px 3px;font-size:9px;padding:1px 5px}
 .rk-box{padding-bottom:10px!important}
 }
+/* vitrina: el lienzo de las piezas 3D baja un 5,65 % (lo mismo que la cámara, ver CAB_CAM) para que no se corte la base */
+.cab-body .ci-3d{transform:translateY(5.65%)}

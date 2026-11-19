@@ -1001,7 +1001,9 @@ const CAB_TYPES=[["sellado","Sellados"],["arte","Láminas"],["vhs","VHS"],["otro
 const cabType=it=>isSealed(it)?"sellado":it.cat==="arte"?"arte":it.cat==="vhs"?"vhs":"otro";
 // En la vitrina todas las piezas 3D usan la misma cámara (misma distancia y lente): así salen a escala real
 // entre ellas, apoyadas en la balda y dentro de su hueco. De cada modelo solo se toma el ángulo.
-const CAB_CAM='field-of-view="30deg" camera-target="0m 0.165m 0m"';
+// La cámara apunta 2 cm más abajo y el lienzo baja lo mismo (5,65 % de su alto = 0,02 / (2·0,66·tan 15°)): las piezas quedan
+// en el mismo sitio, pero el lienzo llega por debajo de la balda y no corta la esquina de abajo de las cajas vistas desde arriba.
+const CAB_CAM='field-of-view="30deg" camera-target="0m 0.145m 0m"';
 function cabHTML(){
   const l=visible("all").filter(isVarios),{n,v}=catTotals(l),shown=new Set(l.map(i=>i.id));
   const ti=it=>CAB_TYPES.findIndex(([k])=>k===cabType(it));
