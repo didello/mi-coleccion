@@ -693,5 +693,15 @@ a.sale:hover{background:var(--surface-3)}
   --shelf-sh:0 12px 18px -8px rgba(0,0,0,.55);
   --spot:radial-gradient(60% 85% at 50% 45%,rgba(255,250,240,.10),transparent 70%)}
 .cab{--back:radial-gradient(90% 75% at 50% 45%,#efe6d6 0%,#b9ad98 45%,#4a4339 85%,#211d18 100%)}
-.rack{--rback:radial-gradient(90% 80% at 50% 45%,#dfe8f5 0%,#8fa0b8 45%,#2c3442 85%,#12161d 100%)}
+/* luz de fondo del expositor de PlayStation más suave que la de Varios: un brillo tenue detrás de los juegos */
+.rack{--rback:radial-gradient(85% 75% at 50% 45%,#8794a8 0%,#525e71 45%,#20262f 85%,#0e1116 100%)}
 .cab-top,.rk-top{box-shadow:inset 0 -2px 0 #c9a24a,0 6px 10px -4px rgba(0,0,0,.6)!important}
+/* Expositor de PlayStation en el móvil: 4 por balda, cajas de frente y del mismo tamaño, y la etiqueta colgando del canto de la balda */
+@media (max-width:520px){
+.rk-row .gslot{padding:20px 5px 9px!important}
+.rk-row .gcase:not(.g3d){transform:none;width:min(54px,100%);box-shadow:0 8px 10px -4px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14)}
+.rk-row .gcase:not(.g3d) .g-side{display:none}
+.rk-row .gcase.g3d{width:100%!important;margin-bottom:-6%!important}
+.g-price{bottom:-7px!important;left:50%!important;transform:translateX(-50%)!important;border-radius:0 0 3px 3px;font-size:9px;padding:1px 5px}
+.rk-box{padding-bottom:10px!important}
+}
